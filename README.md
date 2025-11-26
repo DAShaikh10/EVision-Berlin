@@ -19,6 +19,7 @@ The analysis helps identify areas with high population density but low charging 
 </div>
 
 **Course:** Advanced Software Engineering
+**Professor:** Dr. Harald Stein
 
 ## Team Members
 
