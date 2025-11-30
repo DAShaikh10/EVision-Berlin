@@ -10,15 +10,16 @@ EVision Berlin analyzes the demand for electric vehicle (EV) charging stations i
 
 The analysis helps identify areas with high population density but low charging station coverage, indicating potential demand for additional infrastructure. This project provides actionable insights for urban planners, policymakers, and EV infrastructure developers.
 
+URL: **[evision-berlin.streamlit.app](https://evision-berlin.streamlit.app/)**
+
 <div align="center">
 
 ![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
 ![Streamlit](https://img.shields.io/badge/streamlit-1.51+-red.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 </div>
 
-**Course:** Advanced Software Engineering
+**Course:** Advanced Software Engineering  
 **Professor:** Dr. Harald Stein
 
 ## Team Members
