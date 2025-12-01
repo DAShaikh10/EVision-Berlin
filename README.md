@@ -94,6 +94,7 @@ EVision-Berlin/
 #### Core Application Files
 
 **`main.py`**
+
 - Entry point for the application
 - Orchestrates data loading, preprocessing, and Streamlit app generation
 - Executes demand analysis calculations
@@ -101,12 +102,14 @@ EVision-Berlin/
   - `main()`: Coordinates the entire workflow from data loading to visualization
 
 **`config.py`**
+
 - Central configuration dictionary (`pdict`)
 - Defines file paths for all datasets
 - Specifies geocode column names
 - Easy modification point for data sources
 
 **`core/methods.py`**
+
 - Contains all core data processing functions
 - Key functions:
   - `load_datasets()`: Loads CSV files for geodata, charging stations, and population
@@ -119,6 +122,7 @@ EVision-Berlin/
   - `demand_analysis_summary()`: Prints summary statistics of demand analysis
 
 **`core/helper_tools.py`**
+
 - Utility functions supporting the main application
 - Key functions:
   - `@timer`: Decorator for measuring function execution time
@@ -139,6 +143,7 @@ EVision-Berlin/
 - **Berlin Records:** ~3,000+ charging points
 
 **Key Columns Used:**
+
 - `Postleitzahl`: Postal code (PLZ) - Primary geographic identifier
 - `Bundesland`: Federal state (filtered to "Berlin")
 - `Breitengrad`: Latitude coordinate (decimal format, comma-separated)
@@ -146,6 +151,7 @@ EVision-Berlin/
 - `Nennleistung Ladeeinrichtung [kW]`: Nominal power output in kilowatts
 
 **Data Quality Notes:**
+
 - Coordinates use German decimal notation (comma as decimal separator)
 - Application converts commas to periods for numeric processing
 - PLZ range for Berlin: 10115 - 14199
@@ -158,12 +164,14 @@ EVision-Berlin/
 - **Records:** ~190 postal codes in Berlin
 
 **Key Columns Used:**
+
 - `plz`: Postal code (PLZ)
 - `einwohner`: Number of residents
 - `lat`: Latitude (optional, for reference)
 - `lon`: Longitude (optional, for reference)
 
 **Data Characteristics:**
+
 - Population ranges from ~1,000 to ~40,000 residents per postal code
 - Central districts typically have higher density
 - Updated periodically from census data
@@ -175,10 +183,12 @@ EVision-Berlin/
 - **Coordinate System:** WGS84 (EPSG:4326)
 
 **Key Columns:**
+
 - `PLZ`: Postal code identifier
 - `geometry`: Polygon boundaries in WKT format
 
 **Usage:**
+
 - Enables choropleth maps (colored regions)
 - Defines boundaries for each postal code area
 - Allows spatial joins and geographic aggregations
@@ -212,8 +222,8 @@ EVision-Berlin/
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/Amaan6674/Electric-Mobility-Berlin.git
-cd Electric-Mobility-Berlin
+git clone git@github.com:DAShaikh10/EVision-Berlin.git EVision-Berlin
+cd EVision-Berlin
 ```
 
 Or download the source code ZIP and extract to a folder named `EVision-Berlin`.
@@ -223,12 +233,14 @@ Or download the source code ZIP and extract to a folder named `EVision-Berlin`.
 Creating a virtual environment isolates project dependencies from your system Python installation.
 
 **On macOS/Linux:**
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
 **On Windows:**
+
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
@@ -246,14 +258,14 @@ pip install -r requirements.txt
 
 **Key Packages Installed:**
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `pandas` | Latest | Data manipulation and analysis |
-| `geopandas` | Latest | Geospatial data processing |
-| `streamlit` | 1.51+ | Web application framework |
-| `folium` | Latest | Interactive maps |
-| `streamlit-folium` | Latest | Streamlit-Folium integration |
-| `branca` | Latest | Color mapping for visualizations |
+| Package            | Version | Purpose                          |
+| ------------------ | ------- | -------------------------------- |
+| `pandas`           | Latest  | Data manipulation and analysis   |
+| `geopandas`        | Latest  | Geospatial data processing       |
+| `streamlit`        | 1.51+   | Web application framework        |
+| `folium`           | Latest  | Interactive maps                 |
+| `streamlit-folium` | Latest  | Streamlit-Folium integration     |
+| `branca`           | Latest  | Color mapping for visualizations |
 
 ### Step 4: Verify Data Files
 
@@ -265,6 +277,7 @@ Ensure the following files are present in the `datasets/` folder:
 ✅ `geodata_berlin_dis.csv` (district boundaries)
 
 **If Missing:**
+
 - Download `Ladesaeulenregister.csv` from [Bundesnetzagentur](https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/start.html)
 - Rename to `Ladesaeulenregister.csv` if the filename includes a date
 - Contact the repository maintainers for other data files
@@ -276,17 +289,20 @@ Ensure the following files are present in the `datasets/` folder:
 ### Running Locally
 
 1. **Activate Virtual Environment** (if not already active):
+
    ```bash
    source .venv/bin/activate  # macOS/Linux
    .venv\Scripts\activate     # Windows
    ```
 
 2. **Run the Streamlit Application:**
+
    ```bash
    streamlit run main.py
    ```
 
 3. **Access the Application:**
+
    - The app will automatically open in your default browser
    - Default URL: `http://localhost:8501`
    - If the browser doesn't open, manually navigate to the URL shown in the terminal
@@ -318,11 +334,13 @@ For public deployment:
 #### 1. Sidebar Controls
 
 **Power Category Filter:**
+
 - Select one or multiple power categories
 - Options: Slow, Normal, Fast, Rapid, Ultra-rapid
 - Filters apply to the charging station map layer
 
 **Postal Code Search:**
+
 - Enter a specific Berlin postal code (10115-14199)
 - Instantly zooms to and highlights the selected area
 - Displays statistics for that postal code
@@ -330,6 +348,7 @@ For public deployment:
 #### 2. Statistics Dashboard
 
 Located at the top of the main area:
+
 - **Total Charging Stations:** Count of all stations in Berlin
 - **Total Population:** Sum of residents across all postal codes
 - **Average Stations per PLZ:** Mean distribution
@@ -338,16 +357,17 @@ Located at the top of the main area:
 #### 3. Interactive Map
 
 **Layers:**
+
 - **Layer 1 - Population Density:** Colored by resident count
   - Toggle on/off via checkbox
   - Choropleth coloring (lighter to darker = fewer to more residents)
-  
 - **Layer 2 - Charging Stations:** Colored by station count
   - Toggle on/off via checkbox
   - Marker clusters for dense areas
   - Individual station markers
 
 **Interactions:**
+
 - **Zoom:** Mouse wheel or +/- buttons
 - **Pan:** Click and drag
 - **Click Postal Code:** View detailed statistics in popup
@@ -356,6 +376,7 @@ Located at the top of the main area:
 #### 4. Demand Priority Table
 
 Below the map:
+
 - **High Demand Areas:** Postal codes with high population but few stations
 - **Medium Demand Areas:** Balanced population-to-station ratios
 - **Low Demand Areas:** Well-served areas or low population
@@ -367,6 +388,7 @@ Below the map:
 ### Layer 1: Population Density per Postal Code
 
 **Color Coding:**
+
 - 🟡 **Yellow/Light:** Low population (< 5,000 residents)
 - 🟠 **Orange:** Medium population (5,000 - 15,000 residents)
 - 🔴 **Red/Dark:** High population (> 15,000 residents)
@@ -374,12 +396,14 @@ Below the map:
 **Key Observations:**
 
 1. **Central Districts (Mitte, Prenzlauer Berg, Friedrichshain)**
+
    - Darkest colors indicate highest density
    - Compact urban living with high apartment concentration
    - Young, urban demographic
    - **Expected Behavior:** High demand for public charging infrastructure
 
 2. **Outer Districts (Pankow, Spandau, Köpenick, Marzahn-Hellersdorf)**
+
    - Lighter colors indicate lower density
    - More single-family homes with private parking
    - Higher likelihood of home charging installations
@@ -392,6 +416,7 @@ Below the map:
    - **Expected Behavior:** Moderate-to-high demand
 
 **Population Distribution Insights:**
+
 - Berlin's population centers around the inner ring (S-Bahn Ring)
 - East-West divide less pronounced than historically
 - Postal codes with universities/institutions may show anomalies
@@ -399,6 +424,7 @@ Below the map:
 ### Layer 2: Charging Stations per Postal Code
 
 **Color Coding:**
+
 - 🟡 **Yellow/Light:** Few or no stations (0-5 stations)
 - 🟠 **Orange:** Moderate infrastructure (5-15 stations)
 - 🔴 **Red/Dark:** Well-served areas (> 15 stations)
@@ -406,12 +432,14 @@ Below the map:
 **Key Observations:**
 
 1. **Business Districts & Tourist Areas**
+
    - Well-served despite lower resident populations
    - Examples: Potsdamer Platz, Kurfürstendamm, Alexanderplatz
    - Stations serve commuters, tourists, and commercial vehicles
    - **Insight:** Infrastructure follows economic activity, not just population
 
 2. **Residential High-Density Areas**
+
    - Uneven distribution observed
    - Some high-population postal codes have minimal infrastructure
    - Historical building constraints limit installations
@@ -424,6 +452,7 @@ Below the map:
    - **Insight:** Lower priority due to home charging availability
 
 **Infrastructure Patterns:**
+
 - Concentration along major roads and highways
 - Clustering near shopping centers and parking facilities
 - Gap in residential-only neighborhoods
@@ -437,19 +466,22 @@ The project includes comprehensive data quality analysis and outlier detection t
 ### Automated Analysis
 
 When you run `python main.py`, the system automatically:
+
 1. **Analyzes Missing Data** - Identifies incomplete records
 2. **Detects Outliers** - Uses IQR (Interquartile Range) method
 3. **Generates Visualizations** - Creates 3 PNG files with 16 plots total
 4. **Produces Statistical Reports** - Prints detailed summaries to console
 
-*Note:* A more condensed version of the automated analysis is available at [`check_data.py`](check_data.py)
+_Note:_ A more condensed version of the automated analysis is available at [`check_data.py`](check_data.py)
 
 ### Generated Visualizations
 
 Three comprehensive visualization files are automatically created:
 
 #### 1. `data_quality_charging_stations.png`
+
 Contains 6 plots analyzing charging station data:
+
 - **Power Capacity Distribution**: Histogram showing frequency of different power ratings
 - **Outlier Detection**: Box plot identifying stations with unusual power capacities
 - **Power Categories**: Bar chart showing distribution across Slow/Normal/Fast/Rapid/Ultra categories
@@ -458,7 +490,9 @@ Contains 6 plots analyzing charging station data:
 - **Top 10 PLZ**: Areas with highest station counts
 
 #### 2. `data_quality_residents.png`
+
 Contains 6 plots analyzing population data:
+
 - **Population Distribution**: Histogram of residents per postal code
 - **Population Outliers**: Box plot identifying unusual density areas
 - **Population Categories**: Distribution across Very Low/Low/Medium/High/Very High
@@ -467,7 +501,9 @@ Contains 6 plots analyzing population data:
 - **Q-Q Plot**: Statistical normality test for population distribution
 
 #### 3. `data_quality_combined.png`
+
 Contains 4 plots analyzing infrastructure-population relationships:
+
 - **Correlation Scatter**: Population vs station count with correlation coefficient
 - **Residents per Station**: Distribution of service burden
 - **Correlation Heatmap**: Visual representation of variable relationships
@@ -476,18 +512,21 @@ Contains 4 plots analyzing infrastructure-population relationships:
 ### Key Findings from Analysis
 
 **Charging Stations:**
+
 - Total: 3,664 stations in Berlin
 - Power Range: 6-600 kW
 - Outliers: 461 ultra-rapid chargers (>77 kW)
 - Missing Data: 22% of records lack power rating
 
 **Population:**
+
 - Total: 191 postal codes analyzed
 - Range: 139 - 35,353 residents per PLZ
 - Outliers: 2 areas (PLZ 12627: very high, PLZ 14053: very low)
 - Missing Data: 0% (complete dataset)
 
 **Infrastructure Coverage:**
+
 - Correlation: 0.131 (weak) between population and stations
 - Critical Gap: PLZ 10115 (20,313 residents, 0 stations)
 - Average: 1,898 residents per station
@@ -501,6 +540,7 @@ Contains 4 plots analyzing infrastructure-population relationships:
 ### Detailed Documentation
 
 For complete analysis results, see [`DATA_QUALITY_ANALYSIS.md`](docs/DATA_QUALITY_ANALYSIS.md), which includes:
+
 - Detailed explanations of each visualization
 - Statistical summaries and thresholds
 - Identified anomalies and their implications
@@ -513,12 +553,14 @@ For complete analysis results, see [`DATA_QUALITY_ANALYSIS.md`](docs/DATA_QUALIT
 ### High-Demand Areas (Critical Priority)
 
 **Identification Criteria:**
+
 - **Population:** RED on residents map (> 15,000 residents)
 - **Infrastructure:** YELLOW on charging stations map (< 5 stations)
 - **Demand Ratio:** > 5,000 residents per charging station
 - **Priority:** Immediate action required
 
 **Characteristics of High-Demand Areas:**
+
 - Dense residential neighborhoods
 - Limited existing charging infrastructure
 - High apartment-to-house ratio (limited private charging)
@@ -527,14 +569,17 @@ For complete analysis results, see [`DATA_QUALITY_ANALYSIS.md`](docs/DATA_QUALIT
 **Recommended Actions:**
 
 1. **Install Fast Chargers (50+ kW)**
+
    - Quick turnaround for multiple users
    - Suitable for residents without home charging
 
 2. **Target Multi-Unit Residential Buildings**
+
    - Partner with building management
    - Install shared charging infrastructure in parking areas
 
 3. **Deploy Street-Side Charging**
+
    - Lamppost chargers (on-street parking)
    - Sidewalk-accessible stations
    - Curbside installations
@@ -545,6 +590,7 @@ For complete analysis results, see [`DATA_QUALITY_ANALYSIS.md`](docs/DATA_QUALIT
    - Subscription-based models
 
 **Expected Impact:**
+
 - Reduce range anxiety for residents
 - Increase EV adoption rates
 - Improve air quality in dense areas
@@ -552,12 +598,14 @@ For complete analysis results, see [`DATA_QUALITY_ANALYSIS.md`](docs/DATA_QUALIT
 ### Medium-Demand Areas (High Priority)
 
 **Identification Criteria:**
+
 - **Population:** ORANGE on residents map (5,000-15,000 residents)
 - **Infrastructure:** YELLOW-ORANGE on charging stations map (5-15 stations)
 - **Demand Ratio:** 2,000-5,000 residents per station
 - **Priority:** Near-term expansion
 
 **Characteristics:**
+
 - Moderate population density
 - Some existing infrastructure but insufficient
 - Mix of residential and commercial areas
@@ -566,11 +614,13 @@ For complete analysis results, see [`DATA_QUALITY_ANALYSIS.md`](docs/DATA_QUALIT
 **Recommended Actions:**
 
 1. **Add Standard Level 2 Chargers (11-22 kW)**
+
    - Overnight/long-duration charging
    - Cost-effective installation
    - Sufficient for daily charging needs
 
 2. **Expand Existing Station Locations**
+
    - Add more charge points to existing sites
    - Leverage existing electrical infrastructure
    - Reduce installation costs
@@ -581,6 +631,7 @@ For complete analysis results, see [`DATA_QUALITY_ANALYSIS.md`](docs/DATA_QUALIT
    - Workplace charging programs
 
 **Expected Impact:**
+
 - Prevent future congestion at charging stations
 - Support continued EV adoption growth
 - Improve convenience for existing EV owners
@@ -588,12 +639,14 @@ For complete analysis results, see [`DATA_QUALITY_ANALYSIS.md`](docs/DATA_QUALIT
 ### Low-Demand Areas (Future Planning)
 
 **Identification Criteria:**
+
 - **Population:** YELLOW-ORANGE on residents map (< 10,000 residents)
 - **Infrastructure:** ORANGE-RED on charging stations map (> 10 stations)
 - **Demand Ratio:** < 2,000 residents per station
 - **Priority:** Monitoring and long-term planning
 
 **Characteristics:**
+
 - Well-served by existing infrastructure
 - Lower population density
 - Higher home ownership (private charging available)
@@ -602,11 +655,13 @@ For complete analysis results, see [`DATA_QUALITY_ANALYSIS.md`](docs/DATA_QUALIT
 **Recommended Actions:**
 
 1. **Monitor Usage Patterns**
+
    - Track utilization rates of existing stations
    - Identify peak usage times
    - Adjust as needed based on data
 
 2. **Track EV Adoption Rates**
+
    - Watch for increases in EV registrations
    - Survey residents about future EV purchase plans
    - Anticipate future demand
@@ -617,6 +672,7 @@ For complete analysis results, see [`DATA_QUALITY_ANALYSIS.md`](docs/DATA_QUALIT
    - Budget for phased deployment
 
 **Expected Impact:**
+
 - Maintain sufficient capacity as EV adoption grows
 - Avoid overbuilding in low-demand areas
 - Optimize infrastructure investment
@@ -626,11 +682,13 @@ For complete analysis results, see [`DATA_QUALITY_ANALYSIS.md`](docs/DATA_QUALIT
 The application calculates and displays:
 
 **Demand Score Calculation:**
+
 ```
 Demand Score = (Population / Number of Stations) × Density Factor
 ```
 
 **Categories:**
+
 - **Critical (Red):** Demand score > 10,000
 - **High (Orange):** Demand score 5,000-10,000
 - **Medium (Yellow):** Demand score 2,000-5,000
@@ -645,21 +703,25 @@ Demand Score = (Population / Number of Stations) × Density Factor
 **Not Included in Analysis:**
 
 ❌ **Private Charging Stations**
+
 - Home installations (wallboxes in private garages)
 - Residential building charging (private access)
 - **Impact:** Actual public demand may be overestimated in areas with high home ownership
 
 ❌ **Workplace Charging**
+
 - Office building charging facilities
 - Corporate fleet charging
 - **Impact:** Commuters may charge at work, reducing public demand in residential areas
 
 ❌ **Semi-Public Charging**
+
 - Shopping center charging (may be private)
 - Hotel/restaurant charging (customer-only)
 - **Impact:** These reduce demand but aren't always publicly accessible
 
 ❌ **Reserved/Fleet Charging**
+
 - Taxi and ride-sharing fleet stations
 - Car-sharing service stations
 - Delivery vehicle charging
@@ -670,20 +732,24 @@ Demand Score = (Population / Number of Stations) × Density Factor
 ### 2. Housing Type Not Considered
 
 **Issue:**
+
 - Single-family homeowners typically install private chargers
 - Apartment dwellers rely heavily on public infrastructure
 - Analysis treats all residents equally
 
 **Missing Data:**
+
 - Ratio of apartments to single-family homes per postal code
 - Percentage of residents with private parking
 - Building age (affects installation feasibility)
 
 **Impact on Analysis:**
+
 - Demand may be **underestimated** in apartment-heavy districts
 - Demand may be **overestimated** in suburban areas with high home ownership
 
 **Mitigation Strategy:**
+
 - Visual inspection: high-rise areas likely have higher true demand
 - Cross-reference with urban planning data
 - Consider historical building patterns (inner city = apartments)
@@ -693,16 +759,19 @@ Demand Score = (Population / Number of Stations) × Density Factor
 **Missing Considerations:**
 
 📅 **Growth Trends**
+
 - Population increase/decrease over time
 - New residential developments
 - Urban migration patterns
 
 ⚡ **EV Adoption Rates**
+
 - Current EV penetration varies by district
 - Accelerating adoption curves
 - Government incentive programs
 
 🔄 **Seasonal Variations**
+
 - Tourist influx in summer
 - Temporary residents (students)
 - Business travel patterns
@@ -710,6 +779,7 @@ Demand Score = (Population / Number of Stations) × Density Factor
 **Consequence:** Analysis provides a snapshot, not a predictive model.
 
 **Recommendation:**
+
 - Update analysis **annually** or **semi-annually**
 - Track charging station installations over time
 - Monitor EV registration data by postal code
@@ -719,27 +789,32 @@ Demand Score = (Population / Number of Stations) × Density Factor
 **Critical Distinction:**
 
 **Availability (This Analysis):**
+
 - Number of charging stations present
 - Geographic distribution
 - Total capacity
 
 **Utilization (Not Measured):**
+
 - How often stations are used
 - Wait times and congestion
 - Peak vs. off-peak usage
 - Average charging duration
 
 **Reality:**
+
 - **10 stations at 90% utilization** = severe shortage, long wait times
 - **5 stations at 20% utilization** = excess capacity, no congestion
 
 **Ideal Enhancement:**
+
 - Integrate **real-time usage data** from charging networks
 - Calculate **occupancy rates** and **wait times**
 - Identify **congestion hotspots**
 - Measure **charging session duration**
 
 **Data Sources for Future Work:**
+
 - Charging network APIs (e.g., Charge Point, Ionity)
 - Berlin municipal data on public charging usage
 - User surveys and complaint data
@@ -747,15 +822,18 @@ Demand Score = (Population / Number of Stations) × Density Factor
 ### 5. Power Output Distribution
 
 **Current Analysis:**
+
 - Counts stations regardless of power output
 - Optional filtering by power category
 
 **Missing Insights:**
+
 - One ultra-rapid charger (150+ kW) serves more users per day than multiple slow chargers
 - Charging speed affects turnover and capacity
 - Mismatch between supply and user needs
 
 **Future Improvement:**
+
 - Weight stations by throughput capacity
 - Calculate "effective" station count based on power output
 - Recommend optimal mix of slow/fast/rapid chargers per area
@@ -763,6 +841,7 @@ Demand Score = (Population / Number of Stations) × Density Factor
 ### 6. Accessibility and Availability
 
 **Not Addressed:**
+
 - **24/7 Availability:** Some stations have restricted hours
 - **Network Membership:** Some require specific RFID cards/apps
 - **Pricing Tiers:** Cost variation affects usage patterns
@@ -771,6 +850,7 @@ Demand Score = (Population / Number of Stations) × Density Factor
 ### 7. Competing Infrastructure
 
 **Not Considered:**
+
 - Proximity to neighboring postal codes with good infrastructure
 - Residents may drive short distances to nearby areas
 - Edge effects at postal code boundaries
@@ -783,40 +863,34 @@ Demand Score = (Population / Number of Stations) × Density Factor
 
 ### Core Frameworks
 
-| Technology | Purpose | Key Features Used |
-|------------|---------|-------------------|
-| **Python 3.10+** | Programming language | Type hints, dataclasses, f-strings |
-| **Streamlit** | Web application framework | Interactive widgets, caching, layout |
-| **Folium** | Interactive mapping | Choropleth maps, markers, popups |
-| **Pandas** | Data manipulation | DataFrames, groupby, merge |
-| **GeoPandas** | Geospatial data | GeoDataFrames, spatial joins, WKT parsing |
+| Technology       | Purpose                   | Key Features Used                         |
+| ---------------- | ------------------------- | ----------------------------------------- |
+| **Python 3.10+** | Programming language      | Type hints, dataclasses, f-strings        |
+| **Streamlit**    | Web application framework | Interactive widgets, caching, layout      |
+| **Folium**       | Interactive mapping       | Choropleth maps, markers, popups          |
+| **Pandas**       | Data manipulation         | DataFrames, groupby, merge                |
+| **GeoPandas**    | Geospatial data           | GeoDataFrames, spatial joins, WKT parsing |
 
 ### Supporting Libraries
 
-| Library | Purpose |
-|---------|---------|
-| **Branca** | Color mapping for visualizations |
+| Library              | Purpose                                  |
+| -------------------- | ---------------------------------------- |
+| **Branca**           | Color mapping for visualizations         |
 | **Streamlit-Folium** | Integration between Streamlit and Folium |
-| **Pickle** | Data serialization and caching |
-
-### Development Tools
-
-- **Git:** Version control
-- **pip:** Package management
-- **Virtual Environment:** Dependency isolation
-
----
+| **Pickle**           | Data serialization and caching           |
 
 ## Future Enhancements
 
 ### Planned Features
 
 1. **Separate Layers for Each Power Category**
+
    - Individual map layers for Slow, Normal, Fast, Rapid, Ultra-rapid
    - Toggle each category independently
    - Analyze power availability distribution
 
 2. **Data Quality Validation**
+
    - Automated checks for data integrity
    - Column format validation
    - Value range verification
@@ -824,11 +898,13 @@ Demand Score = (Population / Number of Stations) × Density Factor
    - Missing data reporting
 
 3. **Predictive Modeling**
+
    - Forecast future demand based on trends
    - EV adoption rate projections
    - Population growth modeling
 
 4. **Real-Time Data Integration**
+
    - Live charging station availability
    - Real-time occupancy rates
    - Wait time estimates
@@ -852,19 +928,9 @@ We welcome contributions! Please follow these guidelines:
 
 ---
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
 ## Acknowledgments
 
 - **Bundesnetzagentur** for providing comprehensive charging station data
 - **Berlin Open Data Portal** for geographic and demographic datasets
 - **Streamlit Community** for excellent documentation and support
 - **Course Instructors** for guidance and project requirements
-
----
-
-**Last Updated:** November 2025
