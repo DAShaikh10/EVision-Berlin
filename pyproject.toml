@@ -1,0 +1,12 @@
+[tool.pylint.format]
+max-line-length = 130
+
+[tool.pylint.messages_control]
+disable = [
+    "C0103", # Variable name doesn't conform to snake_case naming style.
+    "R0903", # Too few public methods.
+    "R0913", # Too many arguments.
+    "R0917", # Too many positional arguments.
+    "W0718", # Cacthing too general exception Exception.
+    "W0603", # Using global statement.
+]

@@ -5,3 +5,4 @@ seaborn
 streamlit
 streamlit_folium
 scipy
+pylint
