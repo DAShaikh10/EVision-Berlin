@@ -1,8 +1,8 @@
 from .CSVRepository import CSVRepository
 from .GeoDataRepository import GeoDataRepository
 
-from src.shared.domain.entities import GeoLocation
 from src.discovery.domain.entities import PostalCode
+from src.shared.domain.value_objects import GeoLocation
 
 
 class CSVGeoDataRepository(GeoDataRepository, CSVRepository):
