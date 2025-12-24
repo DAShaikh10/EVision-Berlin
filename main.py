@@ -1,57 +1,147 @@
 import os
 
-# Setup - Determine the current working directory so that the rest of the code can use relative paths correctly.
-cwd = os.getcwd()
-print("DEBUG: Current working directory:\n" + cwd)
+from pathlib import Path
 
-# Imports.
 from config import pdict  # Serves as the project configuration dictionary.
+from src.ui.application import StreamlitApp
+from src.shared.domain.events import DomainEventBus, StationSearchPerformedEvent
+from src.shared.infrastructure.repositories import CSVChargingStationRepository, CSVGeoDataRepository
+from src.shared.application.services import ChargingStationService, GeoLocationService, PostalCodeResidentService
+from src.demand.application.services import DemandAnalysisService
+from src.demand.domain.events import DemandAnalysisCalculatedEvent, HighDemandAreaIdentifiedEvent
+from src.demand.infrastructure.repositories import CSVPopulationRepository, InMemoryDemandAnalysisRepository
 
-from core import methods as mt
-from core import helper_tools as ht
 
-
-@ht.timer
-def main() -> None:
+def setup_repositories():
     """
-    Main: Generation of Streamlit App for visualizing electric charging stations & residents in Berlin with power categories and search functionality.
+    Setup all repository instances.
+
+    Returns:
+        Tuple of (charging_station_repo, geo_data_repo, population_repo, demand_analysis_repo)
     """
 
-    # Load datasets.
-    # df_geodat_plz: Geodata Berlin PLZ - Postal codes for Berlin with geocoordinates.
-    # df_lstat: Ladesäulenregister - Electric charging stations in Germany.
-    # df_residents: PLZ Einwohner - Residents per postal code in Germany.
-    df_geodat_plz, df_lstat, df_residents = mt.load_datasets(pdict)
+    # Determine the current working directory so that the rest of the code can use relative paths correctly.
+    cwd = Path(os.getcwd())
+    dataset_folder: str | None = cwd / pdict["dataset_folder"]
 
-    # Preprocess the charging stations data.
-    df_lstat2 = mt.preprop_lstat(df_lstat, df_geodat_plz, pdict)
-    gdf_lstat3 = mt.count_plz_occurrences(df_lstat2)
-    gdf_lstat3_kW = mt.count_plz_occurrences_by_kw(df_lstat2)
+    # Initialize repositories with data.
+    # TODO: Improve error handling.
+    charging_station_repo = CSVChargingStationRepository(os.path.join(dataset_folder, pdict["file_lstations"]))
+    geo_data_repo = CSVGeoDataRepository(os.path.join(dataset_folder, pdict["file_geodat_plz"]))
+    population_repo = CSVPopulationRepository(os.path.join(dataset_folder, pdict["file_residents"]))
+    demand_analysis_repo = InMemoryDemandAnalysisRepository()
 
-    # Preprocess the residents data.
-    gdf_residents2 = mt.preprop_resid(df_residents, df_geodat_plz, pdict)
+    return charging_station_repo, geo_data_repo, population_repo, demand_analysis_repo
 
-    # ========== DATA QUALITY ANALYSIS ==========
-    # Perform comprehensive data quality checks and outlier detection
-    # This generates visualizations and statistical summaries to identify anomalies
-    mt.analyze_data_quality_and_outliers(
-        df_geodat_plz=df_geodat_plz,
-        df_lstat=df_lstat,
-        df_residents=df_residents,
-        gdf_lstat3=gdf_lstat3,
-        gdf_residents2=gdf_residents2
+
+def setup_services(
+    charging_station_repo: CSVChargingStationRepository,
+    geo_data_repo: CSVGeoDataRepository,
+    population_repo: CSVPopulationRepository,
+    demand_analysis_repo: InMemoryDemandAnalysisRepository,
+    event_bus: DomainEventBus,
+):
+    """
+    Setup all application services.
+
+    Args:
+        charging_station_repo: Repository for charging stations.
+        geo_data_repo: Repository for geographic data.
+        population_repo: Repository for population data.
+        demand_analysis_repo: Repository for demand analyses.
+        event_bus: Domain event bus.
+
+    Returns:
+        Tuple of (postal_code_residents_service, charging_station_service, geolocation_service, demand_analysis_service)
+    """
+    # Station Discovery service.
+    charging_station_service = ChargingStationService(repository=charging_station_repo, event_bus=event_bus)
+
+    # Postal Code Residents service.
+    postal_code_residents_service = PostalCodeResidentService(repository=population_repo, event_bus=event_bus)
+
+    # Geo Location service.
+    geolocation_service = GeoLocationService(repository=geo_data_repo, event_bus=event_bus)
+
+    # Demand Analysis service.
+    demand_analysis_service = DemandAnalysisService(
+        repository=demand_analysis_repo,
+        event_bus=event_bus,
     )
-    # ========== END DATA QUALITY ANALYSIS ==========
 
-    # Calculate demand priority analysis.
-    demand_analysis = mt.calculate_demand_priority(gdf_residents2, gdf_lstat3)
+    return postal_code_residents_service, charging_station_service, geolocation_service, demand_analysis_service
 
-    # Print demand analysis summary.
-    # NOTE: This helps answer the sub-task #7 in the Task layed out in LMS.
-    mt.demand_analysis_summary(demand_analysis)
 
-    # Generate the Streamlit App for visualizing electric charging stations & residents in Berlin.
-    mt.make_streamlit_electric_charging_resid(gdf_lstat3, gdf_residents2, gdf_lstat3_kW, demand_analysis)
+def setup_event_handlers(event_bus: DomainEventBus):
+    """
+    Setup event handlers for domain events.
+
+    Args:
+        event_bus: Domain event bus to register handlers with.
+    """
+
+    # Subscribe handlers.
+
+    # TODO: POSSIBLY move logs to file using logging module?
+    # TODO: Add more event handlers as needed.
+    event_bus.subscribe(StationSearchPerformedEvent, StationSearchPerformedEvent.log_station_search)
+    event_bus.subscribe(DemandAnalysisCalculatedEvent, DemandAnalysisCalculatedEvent.log_demand_calculation)
+    event_bus.subscribe(HighDemandAreaIdentifiedEvent, HighDemandAreaIdentifiedEvent.log_high_demand_area)
+
+
+def main():
+    """
+    Main: Prepares EVision Berlin Streamlit Application for visualizing electric charging stations
+    & residents in Berlin with power categories and search functionality.
+
+    This function orchestrates the application using the DDD / TDD architecture:
+    1. Sets up infrastructure. (repositories)
+    2. Sets up application services.
+    3. Configures event bus and handlers.
+    4. Launches the Streamlit UI.
+    """
+
+    print("=" * 80)
+    print("Preparing EVision Berlin Application ...")
+    print("=" * 80)
+
+    # Initialize Domain Event Bus.
+    event_bus = DomainEventBus()
+
+    # Setup repositories.
+    print("\n[1/4] Setting up repositories...")
+    charging_station_repo, geo_data_repo, population_repo, demand_analysis_repo = setup_repositories()
+
+    # Setup services.
+    print("[2/4] Setting up application services...")
+    postal_code_residents_service, charging_station_service, geolocation_service, demand_analysis_service = (
+        setup_services(charging_station_repo, geo_data_repo, population_repo, demand_analysis_repo, event_bus)
+    )
+
+    # Set up event handlers
+    print("[3/4] Configuring event handlers...")
+    setup_event_handlers(event_bus)
+
+    # Run data quality analysis (legacy)
+    # TODO: Add DDD for this OR.
+    # print("[4/4] Running data quality analysis...")
+    # run_data_quality_analysis(population_repo, charging_station_repo)
+
+    print("EVision Berlin Application Preparation Complete!")
+
+    # Launch Streamlit UI.
+    print("\n[LAUNCH] Starting EVision Berlin Streamlit application...")
+    print("=" * 80)
+
+    app = StreamlitApp(
+        postal_code_residents_service=postal_code_residents_service,
+        charging_station_service=charging_station_service,
+        geolocation_service=geolocation_service,
+        demand_analysis_service=demand_analysis_service,
+        event_bus=event_bus,
+    )
+
+    app.run()
 
 
 if __name__ == "__main__":
