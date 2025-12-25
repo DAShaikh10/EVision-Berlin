@@ -459,10 +459,9 @@ class StreamlitApp:
 
                 if row["Priority"] == "High":
                     return ["background-color: #ff6b6b; color: white; font-weight: bold"] * len(row)
-                elif row["Priority"] == "Medium":
-                    return ["background-color: #ffd93d; color: black; font-weight: bold"] * len(row)
-                else:
-                    return ["background-color: #6bcf7f; color: white; font-weight: bold"] * len(row)
+                if row['Priority'] == 'Medium':
+                    return ['background-color: #ffd93d; color: black; font-weight: bold'] * len(row)
+                return ['background-color: #6bcf7f; color: white; font-weight: bold'] * len(row)
 
             styled_df = results_df.style.apply(highlight_priority, axis=1)
 

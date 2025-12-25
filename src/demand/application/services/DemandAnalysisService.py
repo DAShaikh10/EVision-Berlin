@@ -63,7 +63,7 @@ class DemandAnalysisService(BaseService):
         )
 
         # 3. Calculate demand priority (generates events)
-        priority = aggregate.calculate_demand_priority()
+        aggregate.calculate_demand_priority()
 
         # 4. Save aggregate
         self._repository.save(aggregate)
