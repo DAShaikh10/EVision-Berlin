@@ -3,9 +3,15 @@ Streamlit Application for EVision Berlin.
 """
 
 from typing import List
+import json
+import logging
 
 import folium
 import streamlit
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 from streamlit_folium import folium_static
 
@@ -182,7 +188,8 @@ class StreamlitApp:
             PostalCode(selected_postal_code)
         )
         if plz_geometry is not None and not plz_geometry.empty:
-            centroid = plz_geometry.boundary.centroid
+            # Get the centroid of the boundary geometry
+            centroid = plz_geometry.boundary.geometry.iloc[0].centroid
             return [centroid.y, centroid.x], 13
 
         return [52.52, 13.40], 10
@@ -202,17 +209,18 @@ class StreamlitApp:
 
     def _render_charging_stations_layer(self, folium_map: folium.Map, selected_postal_code: str):
         """
-        Render charging station markers on the map for the selected area.
+        Render charging station markers and postal code boundary on the map for the selected area.
 
-        This method visualizes individual charging stations as interactive markers
-        with popup information including postal code and power capacity.
+        This method visualizes:
+        - Postal code area boundary (blue shaded polygon)
+        - Individual charging stations as interactive markers (green circles)
 
         Args:
             folium_map (folium.Map): The Folium map object to add markers to.
             selected_postal_code (str): The postal code to display stations for.
 
         Behavior:
-            - For specific postal code: Displays all stations in that area
+            - For specific postal code: Displays postal code boundary and all stations in that area
             - For "All areas": Shows informational message (avoid map clutter)
 
         Raises:
@@ -220,26 +228,78 @@ class StreamlitApp:
         """
         try:
             if selected_postal_code and selected_postal_code not in ("", "All areas"):
-                # Retrieve stations for the selected postal code area
+                logger.info(f"=== Starting to render charging stations layer for PLZ: {selected_postal_code} ===")
                 postal_code_obj = PostalCode(selected_postal_code)
+                
+                # Get and render the postal code boundary area
+                logger.info(f"Fetching geolocation data for {selected_postal_code}...")
+                plz_geometry = self.geolocation_service.get_geolocation_data_for_postal_code(postal_code_obj)
+                
+                logger.info(f"plz_geometry is None: {plz_geometry is None}")
+                if plz_geometry is not None:
+                    logger.info(f"plz_geometry type: {type(plz_geometry)}")
+                    logger.info(f"plz_geometry.boundary is None: {plz_geometry.boundary is None}")
+                    if plz_geometry.boundary is not None:
+                        logger.info(f"plz_geometry.boundary type: {type(plz_geometry.boundary)}")
+                        logger.info(f"plz_geometry.boundary shape: {plz_geometry.boundary.shape}")
+                        logger.info(f"plz_geometry.boundary columns: {plz_geometry.boundary.columns.tolist()}")
+                        logger.info(f"First few rows:\n{plz_geometry.boundary.head()}")
+                
+                if plz_geometry is not None and plz_geometry.boundary is not None:
+                    try:
+                        # Convert the boundary GeoDataFrame to GeoJSON format
+                        # The boundary is stored as a GeoDataFrame, access its geometry
+                        logger.info("Converting boundary to GeoJSON...")
+                        boundary_geojson = json.loads(plz_geometry.boundary.to_json())
+                        logger.info(f"GeoJSON conversion successful. Type: {type(boundary_geojson)}")
+                        logger.info(f"GeoJSON keys: {boundary_geojson.keys() if isinstance(boundary_geojson, dict) else 'Not a dict'}")
+                        logger.info(f"GeoJSON content (first 500 chars): {str(boundary_geojson)[:500]}")
+                        
+                        # Add the postal code boundary as a shaded area
+                        logger.info("Adding GeoJSON to folium map...")
+                        folium.GeoJson(
+                            boundary_geojson,
+                            name=f"Postal Code {selected_postal_code}",
+                            style_function=lambda x: {
+                                'fillColor': '#3186cc',
+                                'color': '#0066cc',
+                                'weight': 2,
+                                'fillOpacity': 0.5,
+                            },
+                            tooltip=f"Postal Code: {selected_postal_code}",
+                        ).add_to(folium_map)
+                        logger.info("✓ Postal code boundary added to map successfully!")
+                        streamlit.success(f"✓ Postal code {selected_postal_code} boundary rendered")
+                    except Exception as boundary_error:
+                        logger.error(f"Error rendering boundary: {boundary_error}", exc_info=True)
+                        streamlit.error(f"Error rendering postal code boundary: {boundary_error}")
+                else:
+                    logger.warning(f"Cannot render boundary - plz_geometry: {plz_geometry}, boundary: {plz_geometry.boundary if plz_geometry else 'N/A'}")
+                    streamlit.warning(f"No boundary data available for postal code {selected_postal_code}")
+                
+                # Retrieve stations for the selected postal code area
+                logger.info(f"Fetching charging stations for {selected_postal_code}...")
                 area = self.charging_station_service.search_by_postal_code(postal_code_obj)
+                logger.info(f"Found {len(area.stations)} charging stations")
                 
                 # Create interactive map marker for each charging station
-                for station in area.stations:
+                for idx, station in enumerate(area.stations):
                     folium.CircleMarker(
                         location=[station.latitude, station.longitude],
-                        radius=5,
+                        radius=6,
                         popup=f"PLZ: {station.postal_code.value}<br>Power: {station.power_kw} kW",
-                        color="green",
+                        color="darkgreen",
                         fill=True,
                         fillColor="green",
-                        fillOpacity=0.7,
+                        fillOpacity=0.8,
                     ).add_to(folium_map)
+                logger.info(f"✓ Added {len(area.stations)} charging station markers to map")
             else:
                 # Prevent map clutter when viewing all areas
                 streamlit.info("Select a specific postal code to view charging stations on the map.")
         except Exception as e:
             # Handle and display any errors gracefully in the UI
+            logger.error(f"Error loading charging stations: {e}", exc_info=True)
             streamlit.error(f"Error loading charging stations: {e}")
 
     def _render_map_view(self, selected_postal_code: str, layer_selection: str):
