@@ -6,10 +6,12 @@ import json
 import logging
 
 import folium
-import pandas as pd
 import streamlit
+import pandas as pd
+
 from streamlit_folium import folium_static
 
+from docs import ABOUT_SECTION
 from src.shared.domain.events import DomainEventBus
 from src.shared.domain.value_objects import GeoLocation, PostalCode
 from src.shared.application.services import ChargingStationService, GeoLocationService, PostalCodeResidentService
@@ -119,59 +121,11 @@ class StreamlitApp:
         streamlit.sidebar.header("📊 Layer Selection")
         streamlit.sidebar.radio("Select Layer", layer_options)
 
-    # TODO: Needs rework. This is AI generated :)
     def _render_about(self) -> None:
         """Render about/information view."""
         streamlit.header("ℹ️ About EVision Berlin")
 
-        streamlit.markdown(
-            """
-        ### Domain-Driven Design Architecture
-
-        This application is built using **Domain-Driven Design (DDD)** principles with **Test-Driven Development (TDD)**:
-
-        #### 🎯 Bounded Contexts
-
-        1. **Station Discovery Context**
-           - Manages charging station data and search operations
-           - Uses value objects: PostalCode, GeoLocation, PowerCapacity
-           - Provides station search by postal code
-
-        2. **Demand Analysis Context**
-           - Analyzes EV charging infrastructure demand
-           - Calculates priority levels based on population and station density
-           - Identifies high-priority areas for infrastructure expansion
-
-        3. **Shared Kernel**
-           - Common value objects used across contexts
-           - Domain event system for loose coupling
-
-        #### 🏗️ Architecture Layers
-
-        - **Domain Layer**: Business logic and entities
-        - **Application Layer**: Use case orchestration
-        - **Infrastructure Layer**: Data access (CSV repositories)
-        - **UI Layer**: Streamlit presentation (this app)
-
-        #### ✅ Test Coverage
-
-        - 100+ unit tests covering all domain logic
-        - TDD approach: tests written before implementation
-        - Continuous validation of business rules
-
-        #### 📊 Data Sources
-
-        - **Ladesäulenregister**: Charging station data from BNetzA
-        - **PLZ Einwohner**: Population data by postal code
-        - **Geodata Berlin**: Geographic boundary data
-
-        ---
-
-        **Version**: 2.0 (DDD Architecture)  
-        **Framework**: Streamlit + DDD + TDD  
-        **Course**: Advanced Software Engineering
-        """
-        )
+        streamlit.markdown(ABOUT_SECTION)
 
     def _get_map_center_and_zoom(self, selected_postal_code: str):
         """
@@ -484,7 +438,7 @@ class StreamlitApp:
                 ]
                 high_priority_df = high_priority_df.sort_values("Urgency Score", ascending=False)
 
-                streamlit.dataframe(high_priority_df, width='stretch', hide_index=True)
+                streamlit.dataframe(high_priority_df, width="stretch", hide_index=True)
 
             # Display overview table with color-coded priority visualization
             streamlit.markdown("---")
@@ -528,13 +482,13 @@ class StreamlitApp:
 
                 if row["Priority"] == "High":
                     return ["background-color: #ff6b6b; color: white; font-weight: bold"] * len(row)
-                if row['Priority'] == 'Medium':
-                    return ['background-color: #ffd93d; color: black; font-weight: bold'] * len(row)
-                return ['background-color: #6bcf7f; color: white; font-weight: bold'] * len(row)
+                if row["Priority"] == "Medium":
+                    return ["background-color: #ffd93d; color: black; font-weight: bold"] * len(row)
+                return ["background-color: #6bcf7f; color: white; font-weight: bold"] * len(row)
 
             styled_df = results_df.style.apply(highlight_priority, axis=1)
 
-            streamlit.dataframe(styled_df, width='stretch', hide_index=True)
+            streamlit.dataframe(styled_df, width="stretch", hide_index=True)
 
             # Summary statistics
             streamlit.markdown("---")
