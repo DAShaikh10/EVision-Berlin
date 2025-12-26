@@ -82,8 +82,7 @@ class CSVGeoDataRepository(GeoDataRepository, CSVRepository):
         """
         try:
             if "PLZ" in self._df.columns:
-                # We cast to int because the UI validation logic expects integers,
-                # even though we store them as strings internally for consistency.
+                
                 return self._df["PLZ"].astype(int).unique().tolist()
             else:
                 logger.error("Column 'PLZ' not found in GeoData repository.")

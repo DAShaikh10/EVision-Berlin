@@ -13,7 +13,7 @@ from streamlit_folium import folium_static
 from branca.colormap import LinearColormap
 
 # ==========================================
-# NEW: Validation Logic (Clean Code Principle: SRP)
+# Validation Logic (Clean Code Principle: SRP)
 # ==========================================
 def validate_plz_input(plz_input: str, valid_plz_list: list[int]) -> tuple[bool, str]:
     """
