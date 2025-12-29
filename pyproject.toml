@@ -1,3 +1,18 @@
+[project]
+name = "evision-berlin"
+authors = [
+    { name = "Amaan Shaikh" },
+    { name = "Danish Ali Shaikh" },
+    { name = "Hrusheekesh Sawarkar" },
+    { name = "Melisa Cihan" }
+]
+maintainers = [
+    { name = "Amaan Shaikh" },
+    { name = "Danish Ali Shaikh" },
+    { name = "Hrusheekesh Sawarkar" },
+    { name = "Melisa Cihan" }
+]
+
 # PyLint config.
 [tool.pylint.format]
 max-line-length = 130
