@@ -4,8 +4,7 @@ CSV-based implementation of GeoDataRepository.
 
 import logging
 
-from src.discovery.domain.entities import PostalCode
-from src.shared.domain.value_objects import GeoLocation
+from src.shared.domain.value_objects import PostalCode, GeoLocation
 
 from .CSVRepository import CSVRepository
 from .GeoDataRepository import GeoDataRepository
