@@ -48,10 +48,10 @@ class PopulationData:
         """
         if self.population > 20000:
             return "HIGH"
-        elif self.population > 10000:
+        if self.population > 10000:
             return "MEDIUM"
-        else:
-            return "LOW"
+
+        return "LOW"
 
     def is_high_density(self) -> bool:
         """

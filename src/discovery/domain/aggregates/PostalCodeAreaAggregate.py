@@ -185,14 +185,15 @@ class PostalCodeAreaAggregate(BaseAggregate):
 
         if count == 0:
             return "NO_COVERAGE"
-        elif count >= 20 and fast_count >= 5:
+
+        if count >= 20 and fast_count >= 5:
             return "EXCELLENT"
-        elif count >= 10 and fast_count >= 2:
+        if count >= 10 and fast_count >= 2:
             return "GOOD"
-        elif count >= 5:
+        if count >= 5:
             return "ADEQUATE"
-        else:
-            return "POOR"
+
+        return "POOR"
 
     def get_stations_by_category(self) -> dict:
         """

@@ -3,7 +3,6 @@ Streamlit Application for EVision Berlin.
 """
 
 import json
-import logging
 
 import folium
 import streamlit
