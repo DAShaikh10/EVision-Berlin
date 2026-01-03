@@ -88,8 +88,8 @@ class TestDemandAnalysisAggregateFactoryMethods:
 
         assert isinstance(aggregate, DemandAnalysisAggregate)
         assert aggregate.postal_code == valid_postal_code
-        assert aggregate.population == 30000
-        assert aggregate.station_count == 5
+        assert aggregate.get_population() == 30000
+        assert aggregate.get_station_count() == 5
         assert aggregate.demand_priority is not None
         assert isinstance(aggregate.demand_priority, DemandPriority)
 
@@ -166,11 +166,13 @@ class TestDemandAnalysisAggregateInvariantValidation:
 
     def test_create_raises_error_for_none_priority(self, valid_postal_code):
         """Test that None priority raises ValueError (requires factory method)."""
+        from src.demand.domain.value_objects import Population, StationCount
+        
         with pytest.raises(ValueError, match="Demand priority must be provided"):
             DemandAnalysisAggregate(
                 postal_code=valid_postal_code,
-                population=20000,
-                station_count=5,
+                population=Population(20000),
+                station_count=StationCount(5),
                 demand_priority=None,
             )
 
@@ -178,13 +180,13 @@ class TestDemandAnalysisAggregateInvariantValidation:
         """Test that zero population is valid."""
         aggregate = DemandAnalysisAggregate.create(postal_code=valid_postal_code, population=0, station_count=5)
 
-        assert aggregate.population == 0
+        assert aggregate.get_population() == 0
 
     def test_create_accepts_zero_stations(self, valid_postal_code):
         """Test that zero stations is valid."""
         aggregate = DemandAnalysisAggregate.create(postal_code=valid_postal_code, population=20000, station_count=0)
 
-        assert aggregate.station_count == 0
+        assert aggregate.get_station_count() == 0
 
 
 class TestDemandAnalysisAggregateQueries:
@@ -320,7 +322,7 @@ class TestDemandAnalysisAggregateCommands:
         """Test update_population changes the population value."""
         high_priority_aggregate.update_population(40000)
 
-        assert high_priority_aggregate.population == 40000
+        assert high_priority_aggregate.get_population() == 40000
 
     def test_update_population_recalculates_priority(self, high_priority_aggregate):
         """Test update_population recalculates demand priority."""
@@ -342,7 +344,7 @@ class TestDemandAnalysisAggregateCommands:
         """Test update_station_count changes the station count value."""
         high_priority_aggregate.update_station_count(10)
 
-        assert high_priority_aggregate.station_count == 10
+        assert high_priority_aggregate.get_station_count() == 10
 
     def test_update_station_count_recalculates_priority(self, high_priority_aggregate):
         """Test update_station_count recalculates demand priority."""
@@ -371,13 +373,13 @@ class TestDemandAnalysisAggregateCommands:
         """Test that updating population to zero is valid."""
         high_priority_aggregate.update_population(0)
 
-        assert high_priority_aggregate.population == 0
+        assert high_priority_aggregate.get_population() == 0
 
     def test_update_station_count_to_zero_is_valid(self, high_priority_aggregate):
         """Test that updating station count to zero is valid."""
         high_priority_aggregate.update_station_count(0)
 
-        assert high_priority_aggregate.station_count == 0
+        assert high_priority_aggregate.get_station_count() == 0
         assert high_priority_aggregate.demand_priority.level == PriorityLevel.HIGH
 
 
@@ -511,14 +513,14 @@ class TestDemandAnalysisAggregateEdgeCases:
         """Test aggregate handles very large population."""
         aggregate = DemandAnalysisAggregate.create(postal_code=valid_postal_code, population=1000000, station_count=50)
 
-        assert aggregate.population == 1000000
+        assert aggregate.get_population() == 1000000
         assert aggregate.get_residents_per_station() == 20000.0
 
     def test_aggregate_with_very_large_station_count(self, valid_postal_code):
         """Test aggregate handles very large station count."""
         aggregate = DemandAnalysisAggregate.create(postal_code=valid_postal_code, population=50000, station_count=1000)
 
-        assert aggregate.station_count == 1000
+        assert aggregate.get_station_count() == 1000
         assert aggregate.demand_priority.level == PriorityLevel.LOW
 
     def test_aggregate_with_equal_population_and_stations(self, valid_postal_code):
@@ -560,6 +562,6 @@ class TestDemandAnalysisAggregateEdgeCases:
         high_priority_aggregate.update_population(32000)
 
         # State should be consistent
-        assert high_priority_aggregate.population == 32000
-        assert high_priority_aggregate.station_count == 8
+        assert high_priority_aggregate.get_population() == 32000
+        assert high_priority_aggregate.get_station_count() == 8
         assert high_priority_aggregate.get_residents_per_station() == 4000.0

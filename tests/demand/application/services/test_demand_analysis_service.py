@@ -117,8 +117,8 @@ class TestAnalyzeDemandUseCase:
 
         assert isinstance(result, DemandAnalysisAggregate)
         assert result.postal_code.value == "10115"
-        assert result.population == 30000
-        assert result.station_count == 5
+        assert result.get_population() == 30000
+        assert result.get_station_count() == 5
 
     def test_analyze_demand_calculates_priority_automatically(self, demand_analysis_service):
         """Test that analyze_demand automatically calculates demand priority."""
@@ -152,7 +152,7 @@ class TestAnalyzeDemandUseCase:
         """Test analyzing demand with zero stations (critical shortage)."""
         result = demand_analysis_service.analyze_demand("10115", 50000, 0)
 
-        assert result.station_count == 0
+        assert result.get_station_count() == 0
         assert result.demand_priority.level == PriorityLevel.HIGH
 
     def test_analyze_demand_with_low_priority_area(self, demand_analysis_service, mock_repository):
@@ -329,7 +329,7 @@ class TestUpdateDemandAnalysisUseCase:
 
         result = demand_analysis_service.update_demand_analysis("10115", population=40000)
 
-        assert result.population == 40000
+        assert result.get_population() == 40000
 
     def test_update_demand_analysis_updates_station_count(
         self, demand_analysis_service, mock_repository, high_priority_aggregate
@@ -339,7 +339,7 @@ class TestUpdateDemandAnalysisUseCase:
 
         result = demand_analysis_service.update_demand_analysis("10115", station_count=10)
 
-        assert result.station_count == 10
+        assert result.get_station_count() == 10
 
     def test_update_demand_analysis_updates_both_fields(
         self, demand_analysis_service, mock_repository, high_priority_aggregate
@@ -349,8 +349,8 @@ class TestUpdateDemandAnalysisUseCase:
 
         result = demand_analysis_service.update_demand_analysis("10115", population=50000, station_count=15)
 
-        assert result.population == 50000
-        assert result.station_count == 15
+        assert result.get_population() == 50000
+        assert result.get_station_count() == 15
 
     def test_update_demand_analysis_saves_to_repository(
         self, demand_analysis_service, mock_repository, high_priority_aggregate
