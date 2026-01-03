@@ -57,7 +57,14 @@ class GeoLocation:
         """
         logger.info("GeoLocation __post_init__ called for postal_code: %s", self.postal_code)
         logger.info("Initial boundary type: %s", type(self.boundary))
-        boundary_preview = str(self.boundary)[:200] if self.boundary else "None"
+
+        # Safely convert boundary to string for logging
+        if self.boundary is None:
+            boundary_preview = "None"
+        elif isinstance(self.boundary, str):
+            boundary_preview = self.boundary[:200]
+        else:
+            boundary_preview = f"<{type(self.boundary).__name__}>"
         logger.info("Initial boundary value (first 200 chars): %s", boundary_preview)
 
         # Process the boundary if it's a WKT string
