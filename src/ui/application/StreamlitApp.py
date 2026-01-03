@@ -13,7 +13,7 @@ from streamlit_folium import folium_static
 from docs import ABOUT_SECTION
 
 from src.shared.infrastructure.logging_config import get_logger
-from src.shared.domain.events import DomainEventBus
+from src.shared.domain.events import IDomainEventPublisher
 from src.shared.domain.value_objects import GeoLocation, PostalCode
 from src.shared.application.services import (
     ChargingStationService,
@@ -41,7 +41,7 @@ class StreamlitApp:
         geolocation_service: GeoLocationService,
         demand_analysis_service: DemandAnalysisService,
         power_capacity_service: PowerCapacityService,
-        event_bus: DomainEventBus,
+        event_bus: IDomainEventPublisher,
         valid_plzs: list[int],
     ):
         """
@@ -53,7 +53,7 @@ class StreamlitApp:
             geolocation_service (GeoLocationService): Service for geolocation data.
             demand_analysis_service (DemandAnalysisService): Service for demand analysis.
             power_capacity_service (PowerCapacityService): Service for power capacity analysis.
-            event_bus (DomainEventBus): Domain event bus.
+            event_bus (IDomainEventPublisher): Domain event bus interface.
             valid_plzs (list[int]): List of valid Berlin postal codes for validation.
         """
 
@@ -135,7 +135,7 @@ class StreamlitApp:
         plz_input = streamlit.sidebar.text_input(
             "Enter Postal Code:",
             key="postal_code_input",
-            help="Enter a 5-digit Berlin Postal Code (e.g., 10117) or leave empty for all areas."
+            help="Enter a 5-digit Berlin Postal Code (e.g., 10117) or leave empty for all areas.",
         )
 
         # Perform Validation
@@ -199,7 +199,7 @@ class StreamlitApp:
                 "Filter by Capacity:",
                 ["All", "Low", "Medium", "High"],
                 index=["All", "Low", "Medium", "High"].index(current_capacity_filter),
-                help="Filter postal codes by their total charging power capacity"
+                help="Filter postal codes by their total charging power capacity",
             )
             streamlit.session_state["capacity_filter"] = capacity_filter
 
@@ -213,9 +213,7 @@ class StreamlitApp:
             current_layer = layer_options[0]
 
         layer_selection = streamlit.sidebar.radio(
-            "Select Layer",
-            layer_options,
-            index=layer_options.index(current_layer)
+            "Select Layer", layer_options, index=layer_options.index(current_layer)
         )
         streamlit.session_state["layer_selection"] = layer_selection
 
@@ -289,9 +287,7 @@ class StreamlitApp:
                         ).add_to(folium_map)
 
                         logger.info("✓ Postal code boundary with population data added to map successfully!")
-                        streamlit.success(
-                            f"✓ Postal Code {selected_postal_code}: Population {population:,}"
-                        )
+                        streamlit.success(f"✓ Postal Code {selected_postal_code}: Population {population:,}")
                     except Exception as boundary_error:
                         logger.error("Error rendering residents boundary: %s", boundary_error, exc_info=True)
                         streamlit.error(f"Error rendering postal code boundary: {boundary_error}")
@@ -310,7 +306,9 @@ class StreamlitApp:
             logger.error("Error loading residents layer: %s", e, exc_info=True)
             streamlit.error(f"Error loading residents layer: {e}")
 
-    def _render_power_capacity_layer(self, folium_map: folium.Map, selected_postal_code: str, capacity_filter: str = "All"):
+    def _render_power_capacity_layer(
+        self, folium_map: folium.Map, selected_postal_code: str, capacity_filter: str = "All"
+    ):
         """
         Render power capacity visualization on the map.
 
@@ -340,7 +338,7 @@ class StreamlitApp:
                 streamlit.warning(f"No postal codes found in the '{capacity_filter}' capacity range.")
                 return
 
-            max_capacity = capacity_df['total_capacity_kw'].max()
+            max_capacity = capacity_df["total_capacity_kw"].max()
 
             # Display capacity range information
             if selected_postal_code in ("All areas", ""):
@@ -358,12 +356,12 @@ class StreamlitApp:
                 plz_geometry = self.geolocation_service.get_geolocation_data_for_postal_code(postal_code_obj)
 
                 # Get capacity data for this postal code
-                plz_capacity = capacity_df[capacity_df['postal_code'] == selected_postal_code]
+                plz_capacity = capacity_df[capacity_df["postal_code"] == selected_postal_code]
 
                 if plz_geometry is not None and plz_geometry.boundary is not None and not plz_capacity.empty:
-                    capacity_value = plz_capacity.iloc[0]['total_capacity_kw']
-                    station_count = plz_capacity.iloc[0]['station_count']
-                    capacity_category = plz_capacity.iloc[0]['capacity_category']
+                    capacity_value = plz_capacity.iloc[0]["total_capacity_kw"]
+                    station_count = plz_capacity.iloc[0]["station_count"]
+                    capacity_category = plz_capacity.iloc[0]["capacity_category"]
 
                     color = self.power_capacity_service.get_color_for_capacity(capacity_value, max_capacity)
 
@@ -395,10 +393,10 @@ class StreamlitApp:
                 # Render all postal code areas
                 areas_rendered = 0
                 for _, row in capacity_df.iterrows():
-                    plz = row['postal_code']
-                    capacity = row['total_capacity_kw']
-                    station_count = row['station_count']
-                    category = row['capacity_category']
+                    plz = row["postal_code"]
+                    capacity = row["total_capacity_kw"]
+                    station_count = row["station_count"]
+                    category = row["capacity_category"]
 
                     postal_code_obj = PostalCode(plz)
                     plz_geometry = self.geolocation_service.get_geolocation_data_for_postal_code(postal_code_obj)
@@ -428,9 +426,7 @@ class StreamlitApp:
                         except Exception as e:
                             logger.warning("Could not render postal code %s: %s", plz, e)
 
-                streamlit.success(
-                    f"✓ Rendered {areas_rendered} postal code areas with power capacity visualization"
-                )
+                streamlit.success(f"✓ Rendered {areas_rendered} postal code areas with power capacity visualization")
 
         except Exception as e:
             logger.error("Error rendering power capacity layer: %s", e, exc_info=True)
@@ -601,9 +597,9 @@ class StreamlitApp:
 
             # Define color mapping for priorities
             priority_colors = {
-                "High": "#ff6b6b",    # Red for high priority
+                "High": "#ff6b6b",  # Red for high priority
                 "Medium": "#ffd93d",  # Gold/Yellow for medium priority
-                "Low": "#6bcf7f"      # Green for low priority
+                "Low": "#6bcf7f",  # Green for low priority
             }
 
             areas_rendered = 0
@@ -612,7 +608,11 @@ class StreamlitApp:
             for analysis in results:
                 try:
                     # Extract postal code value (analysis.postal_code is a PostalCode object)
-                    plz = analysis.postal_code.value if hasattr(analysis.postal_code, 'value') else str(analysis.postal_code)
+                    plz = (
+                        analysis.postal_code.value
+                        if hasattr(analysis.postal_code, "value")
+                        else str(analysis.postal_code)
+                    )
                     priority = analysis.demand_priority.level.value
                     postal_code_obj = PostalCode(plz)
 
@@ -701,7 +701,6 @@ class StreamlitApp:
         # Create map centered on Berlin
         center, zoom = self._get_map_center_and_zoom(selected_postal_code)
         demand_map = folium.Map(location=center, zoom_start=zoom, tiles="OpenStreetMap")
-
 
         # Display legend below the map
         col1, col2, col3 = streamlit.columns([2, 2, 2])

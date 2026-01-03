@@ -6,7 +6,7 @@ from typing import List, Dict, Optional
 
 from src.shared.infrastructure.logging_config import get_logger
 
-from src.shared.domain.events import DomainEventBus
+from src.shared.domain.events import IDomainEventPublisher
 from src.shared.domain.value_objects import PostalCode
 from src.shared.application.services import BaseService
 from src.demand.domain.aggregates import DemandAnalysisAggregate
@@ -35,7 +35,7 @@ class DemandAnalysisService(BaseService):
     def __init__(
         self,
         repository: DemandAnalysisRepository,
-        event_bus: DomainEventBus,
+        event_bus: IDomainEventPublisher,
     ):
         super().__init__(repository, event_bus)
 

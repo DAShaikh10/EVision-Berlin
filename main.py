@@ -13,7 +13,8 @@ from src.shared.infrastructure.logging_config import get_logger, setup_logging
 
 from src.ui.application import StreamlitApp
 from src.shared.application.event_handlers import StationSearchEventHandler
-from src.shared.domain.events import DomainEventBus, StationSearchPerformedEvent
+from src.shared.domain.events import IDomainEventPublisher, StationSearchPerformedEvent
+from src.shared.infrastructure.event_bus import InMemoryEventBus
 from src.shared.infrastructure.repositories import (
     CSVChargingStationRepository,
     CSVGeoDataRepository,
@@ -57,7 +58,7 @@ def setup_services(
     geo_data_repo: CSVGeoDataRepository,
     population_repo: CSVPopulationRepository,
     demand_analysis_repo: InMemoryDemandAnalysisRepository,
-    event_bus: DomainEventBus,
+    event_bus: IDomainEventPublisher,
 ):
     """
     Setup all application services.
@@ -92,7 +93,7 @@ def setup_services(
     )
 
 
-def setup_event_handlers(event_bus: DomainEventBus):
+def setup_event_handlers(event_bus: IDomainEventPublisher):
     """
     Setup event handlers for domain events.
     """
@@ -115,8 +116,8 @@ def main():
     logger.info("Preparing EVision Berlin Application ...")
     logger.info("=" * 80)
 
-    # Initialize Domain Event Bus.
-    event_bus = DomainEventBus()
+    # Initialize Domain Event Bus (infrastructure implementation).
+    event_bus: IDomainEventPublisher = InMemoryEventBus()
 
     try:
         # Setup repositories.

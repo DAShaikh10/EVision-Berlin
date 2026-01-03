@@ -4,7 +4,7 @@ Shared Application Service for Postal Code Resident Data.
 
 from typing import List
 
-from src.shared.domain.events import DomainEventBus
+from src.shared.domain.events import IDomainEventPublisher
 from src.shared.domain.value_objects import PostalCode, PopulationData
 from src.shared.infrastructure.repositories import PopulationRepository
 
@@ -16,7 +16,7 @@ class PostalCodeResidentService(BaseService):
     Application service for managing postal code resident data.
     """
 
-    def __init__(self, repository: PopulationRepository, event_bus: DomainEventBus):
+    def __init__(self, repository: PopulationRepository, event_bus: IDomainEventPublisher):
         super().__init__(repository)
 
         self._event_bus = event_bus

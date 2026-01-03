@@ -118,7 +118,7 @@ class DemandAnalysisAggregate(BaseAggregate):
         """
 
         priority = DemandPriority.calculate_priority(self.population, self.station_count)
-        object.__setattr__(self, "demand_priority", priority)
+        self.demand_priority = priority
 
         # Emit domain event.
         event = DemandAnalysisCalculatedEvent(
@@ -191,7 +191,7 @@ class DemandAnalysisAggregate(BaseAggregate):
         if new_population < 0:
             raise ValueError("Population cannot be negative")
 
-        object.__setattr__(self, "population", new_population)
+        self.population = new_population
         self.calculate_demand_priority()
 
     def update_station_count(self, new_count: int):
@@ -208,7 +208,7 @@ class DemandAnalysisAggregate(BaseAggregate):
         if new_count < 0:
             raise ValueError("Station count cannot be negative")
 
-        object.__setattr__(self, "station_count", new_count)
+        self.station_count = new_count
         self.calculate_demand_priority()
 
     def get_residents_per_station(self) -> float:

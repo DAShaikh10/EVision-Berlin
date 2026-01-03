@@ -2,7 +2,7 @@
 Shared Application Service for Geographic Location Data.
 """
 
-from src.shared.domain.events import DomainEventBus
+from src.shared.domain.events import IDomainEventPublisher
 from src.shared.domain.value_objects import GeoLocation, PostalCode
 from src.shared.infrastructure.repositories import GeoDataRepository
 
@@ -14,13 +14,13 @@ class GeoLocationService(BaseService):
     Application service for geographic location data.
     """
 
-    def __init__(self, repository: GeoDataRepository, event_bus: DomainEventBus):
+    def __init__(self, repository: GeoDataRepository, event_bus: IDomainEventPublisher):
         """
         Initialize the GeoLocationService.
 
         Args:
             repository (GeoDataRepository): Repository for geographic data.
-            event_bus (DomainEventBus): Domain event bus.
+            event_bus (IDomainEventPublisher): Domain event publisher interface.
         """
 
         super().__init__(repository, event_bus)
