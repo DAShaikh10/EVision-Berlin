@@ -245,7 +245,8 @@ class StreamlitApp:
         """
         Render population density visualization on the map.
 
-        Highlights the selected postal code area and shows population data on hover.
+        For "All areas": Shows all postal codes colored by population density.
+        For specific postal code: Highlights that area with population data.
 
         Args:
             folium_map (folium.Map): The Folium map object to add layer to.
@@ -253,6 +254,7 @@ class StreamlitApp:
         """
         try:
             if selected_postal_code and selected_postal_code not in ("", "All areas"):
+                # Render specific postal code
                 logger.info("=== Rendering residents layer for PLZ: %s ===", selected_postal_code)
                 postal_code_obj = PostalCode(selected_postal_code)
 
@@ -298,8 +300,83 @@ class StreamlitApp:
                     )
                     streamlit.warning(f"No resident data available for postal code {selected_postal_code}")
             else:
-                # No message needed for "All areas" view.
-                pass
+                # Render all postal codes colored by population
+                logger.info("=== Rendering all postal codes by population ===")
+                
+                # Get all postal codes
+                postal_codes = self.postal_code_residents_service.get_all_postal_codes(sort=True)
+                
+                # Collect population data for all postal codes
+                population_data = []
+                for postal_code in postal_codes:
+                    resident_data = self.postal_code_residents_service.get_resident_data(postal_code)
+                    if resident_data:
+                        population_data.append({
+                            'postal_code': postal_code.value,
+                            'population': resident_data.get_population()
+                        })
+                
+                if not population_data:
+                    streamlit.warning("No population data available for visualization.")
+                    return
+                
+                # Create DataFrame and calculate color scale based on population
+                import pandas as pd
+                pop_df = pd.DataFrame(population_data)
+                max_population = pop_df['population'].max()
+                min_population = pop_df['population'].min()
+                
+                areas_rendered = 0
+                
+                # Render each postal code area colored by population
+                for _, row in pop_df.iterrows():
+                    try:
+                        plz = row['postal_code']
+                        population = row['population']
+                        
+                        postal_code_obj = PostalCode(plz)
+                        plz_geometry = self.geolocation_service.get_geolocation_data_for_postal_code(postal_code_obj)
+                        
+                        if plz_geometry is not None and plz_geometry.boundary is not None:
+                            # Get station count for this postal code
+                            postal_code_area = self.charging_station_service.search_by_postal_code(postal_code_obj)
+                            station_count = postal_code_area.get_station_count() if postal_code_area else 0
+                            
+                            # Calculate color based on population (orange gradient)
+                            # Higher population = darker orange
+                            normalized = (population - min_population) / (max_population - min_population) if max_population > min_population else 0.5
+                            
+                            # Color gradient from light orange to dark orange
+                            # Light: #ffe0b2 (RGB: 255, 224, 178)
+                            # Dark: #e65100 (RGB: 230, 81, 0)
+                            r = int(255 - (255 - 230) * normalized)
+                            g = int(224 - (224 - 81) * normalized)
+                            b = int(178 - (178 - 0) * normalized)
+                            fill_color = f'#{r:02x}{g:02x}{b:02x}'
+                            
+                            boundary_geojson = json.loads(plz_geometry.boundary.to_json())
+                            
+                            folium.GeoJson(
+                                boundary_geojson,
+                                name=f"PLZ {plz}",
+                                style_function=lambda x, color=fill_color: {
+                                    "fillColor": color,
+                                    "color": "#666666",
+                                    "weight": 1,
+                                    "fillOpacity": 0.7,
+                                },
+                                tooltip=(
+                                    f"Postal Code: {plz}<br>"
+                                    f"👥 Population: {population:,}<br>"
+                                    f"⚡ Stations: {station_count}"
+                                ),
+                            ).add_to(folium_map)
+                            areas_rendered += 1
+                    except Exception as e:
+                        logger.warning("Could not render postal code %s: %s", plz, e)
+                
+                logger.info("✓ Rendered %d postal code areas by population", areas_rendered)
+                
         except Exception as e:
             # Handle and display any errors gracefully in the UI
             logger.error("Error loading residents layer: %s", e, exc_info=True)
@@ -428,22 +505,19 @@ class StreamlitApp:
         Render charging station markers and postal code boundary on the map for the selected area.
 
         This method visualizes:
-        - Postal code area boundary (blue shaded polygon)
-        - Individual charging stations as interactive markers (green circles)
+        - For specific postal code: Postal code area boundary (blue shaded polygon) + Individual charging stations
+        - For "All areas": All postal codes colored by number of charging stations
 
         Args:
             folium_map (folium.Map): The Folium map object to add markers to.
             selected_postal_code (str): The postal code to display stations for.
-
-        Behavior:
-            - For specific postal code: Displays postal code boundary and all stations in that area
-            - For "All areas": Shows informational message (avoid map clutter)
 
         Raises:
             Displays error message in UI if station data cannot be loaded.
         """
         try:
             if selected_postal_code and selected_postal_code not in ("", "All areas"):
+                # Render specific postal code with stations
                 logger.info("=== Starting to render charging stations layer for PLZ: %s ===", selected_postal_code)
                 postal_code_obj = PostalCode(selected_postal_code)
 
@@ -509,6 +583,90 @@ class StreamlitApp:
                         fillColor="green",
                         fillOpacity=0.8,
                     ).add_to(folium_map)
+            else:
+                # Render all postal codes colored by station count
+                logger.info("=== Rendering all postal codes by charging station count ===")
+                
+                # Get all postal codes
+                postal_codes = self.postal_code_residents_service.get_all_postal_codes(sort=True)
+                
+                # Collect station count data for all postal codes
+                station_data = []
+                for postal_code in postal_codes:
+                    postal_code_area = self.charging_station_service.search_by_postal_code(postal_code)
+                    station_count = postal_code_area.get_station_count() if postal_code_area else 0
+                    
+                    # Get population data as well
+                    resident_data = self.postal_code_residents_service.get_resident_data(postal_code)
+                    population = resident_data.get_population() if resident_data else 0
+                    
+                    station_data.append({
+                        'postal_code': postal_code.value,
+                        'station_count': station_count,
+                        'population': population
+                    })
+                
+                if not station_data:
+                    streamlit.warning("No charging station data available for visualization.")
+                    return
+                
+                # Create DataFrame and calculate color scale based on station count
+                import pandas as pd
+                stations_df = pd.DataFrame(station_data)
+                max_stations = stations_df['station_count'].max()
+                min_stations = stations_df['station_count'].min()
+                
+                areas_rendered = 0
+                
+                # Render each postal code area colored by station count
+                for _, row in stations_df.iterrows():
+                    try:
+                        plz = row['postal_code']
+                        station_count = row['station_count']
+                        population = row['population']
+                        
+                        postal_code_obj = PostalCode(plz)
+                        plz_geometry = self.geolocation_service.get_geolocation_data_for_postal_code(postal_code_obj)
+                        
+                        if plz_geometry is not None and plz_geometry.boundary is not None:
+                            # Calculate color based on station count (green gradient)
+                            # More stations = darker green
+                            if max_stations > min_stations:
+                                normalized = (station_count - min_stations) / (max_stations - min_stations)
+                            else:
+                                normalized = 0.5
+                            
+                            # Color gradient from light green to dark green
+                            # Light: #c8e6c9 (RGB: 200, 230, 201)
+                            # Dark: #1b5e20 (RGB: 27, 94, 32)
+                            r = int(200 - (200 - 27) * normalized)
+                            g = int(230 - (230 - 94) * normalized)
+                            b = int(201 - (201 - 32) * normalized)
+                            fill_color = f'#{r:02x}{g:02x}{b:02x}'
+                            
+                            boundary_geojson = json.loads(plz_geometry.boundary.to_json())
+                            
+                            folium.GeoJson(
+                                boundary_geojson,
+                                name=f"PLZ {plz}",
+                                style_function=lambda x, color=fill_color: {
+                                    "fillColor": color,
+                                    "color": "#666666",
+                                    "weight": 1,
+                                    "fillOpacity": 0.7,
+                                },
+                                tooltip=(
+                                    f"Postal Code: {plz}<br>"
+                                    f"👥 Population: {population:,}<br>"
+                                    f"⚡ Stations: {station_count}"
+                                ),
+                            ).add_to(folium_map)
+                            areas_rendered += 1
+                    except Exception as e:
+                        logger.warning("Could not render postal code %s: %s", plz, e)
+                
+                logger.info("✓ Rendered %d postal code areas by station count", areas_rendered)
+                
         except Exception as e:
             # Handle and display any errors gracefully in the UI
             logger.error("Error loading charging stations: %s", e, exc_info=True)
