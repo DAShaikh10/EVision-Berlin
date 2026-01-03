@@ -1,5 +1,6 @@
 """Tests for CSV Charging Station Repository."""
-# pylint: disable=redefined-outer-name,use-implicit-booleaness-not-comparison
+
+# pylint: disable=redefined-outer-name
 
 from unittest.mock import patch, MagicMock
 
@@ -9,6 +10,7 @@ import pandas as pd
 from src.shared.infrastructure.repositories.CSVChargingStationRepository import CSVChargingStationRepository
 from src.shared.domain.entities.ChargingStation import ChargingStation
 from src.shared.domain.value_objects.PostalCode import PostalCode
+
 
 @pytest.fixture
 def repo_setup():
@@ -21,10 +23,11 @@ def repo_setup():
         "Breitengrad": ["52,5323", "52,5324", "52,0000"],
         "Längengrad": ["13,3846", "13,3847", "13,0000"],
         "Nennleistung Ladeeinrichtung [kW]": ["22,0", "11,0", "50,0"],
-        "OtherCol": ["Ignored", "Ignored", "Ignored"]
+        "OtherCol": ["Ignored", "Ignored", "Ignored"],
     }
     file_path = "dummy_path.csv"
     return raw_data, file_path
+
 
 @patch("pandas.read_csv")
 def test_initialization_and_transform(mock_read_csv, repo_setup):
@@ -40,7 +43,6 @@ def test_initialization_and_transform(mock_read_csv, repo_setup):
     repo = CSVChargingStationRepository(file_path)
 
     # Access the internal dataframe to verify transformation
-    # pylint: disable=protected-access
     assert "PLZ" in repo._df.columns
     assert "KW" in repo._df.columns
     assert "Breitengrad" in repo._df.columns
@@ -54,6 +56,7 @@ def test_initialization_and_transform(mock_read_csv, repo_setup):
     _, kwargs = mock_read_csv.call_args
     assert kwargs.get("skiprows") == 10
     assert kwargs.get("sep") == ";"
+
 
 @patch("pandas.read_csv")
 def test_find_stations_by_postal_code_found(mock_read_csv, repo_setup):
@@ -81,6 +84,7 @@ def test_find_stations_by_postal_code_found(mock_read_csv, repo_setup):
     assert stations[0].longitude == 13.3846
     assert stations[0].power_kw == 22.0
     assert stations[0].postal_code == mock_postal
+
 
 @patch("pandas.read_csv")
 def test_find_stations_by_postal_code_not_found(mock_read_csv, repo_setup):

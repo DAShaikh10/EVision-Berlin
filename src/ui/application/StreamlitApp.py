@@ -1,7 +1,6 @@
 """
 Streamlit Application for EVision Berlin.
 """
-# pylint: disable=too-many-lines,too-many-locals,too-many-statements,too-many-branches,too-many-nested-blocks
 
 import json
 

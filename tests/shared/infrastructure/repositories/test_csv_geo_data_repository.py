@@ -1,4 +1,5 @@
 """Tests for CSV Geo Data Repository."""
+
 # pylint: disable=redefined-outer-name
 
 from unittest.mock import patch, MagicMock
@@ -9,21 +10,23 @@ import pandas as pd
 from src.shared.infrastructure.repositories.CSVGeoDataRepository import CSVGeoDataRepository
 from src.shared.domain.value_objects.PostalCode import PostalCode
 
+
 @pytest.fixture
 def repo_setup():
     """
     Fixture to provide common setup data: raw CSV data and a dummy file path.
     """
     raw_data = {
-        "PLZ": [10115, 10247], # Usually read as ints by pandas
+        "PLZ": [10115, 10247],  # Usually read as ints by pandas
         "geometry": [
             "POLYGON((13.3 52.5, 13.4 52.5, 13.4 52.6, 13.3 52.6, 13.3 52.5))",
-            "POLYGON((13.4 52.5, 13.5 52.5, 13.5 52.6, 13.4 52.6, 13.4 52.5))"
+            "POLYGON((13.4 52.5, 13.5 52.5, 13.5 52.6, 13.4 52.6, 13.4 52.5))",
         ],
-        "Other": ["Data", "Data"]
+        "Other": ["Data", "Data"],
     }
     file_path = "dummy_geo.csv"
     return raw_data, file_path
+
 
 @patch("pandas.read_csv")
 def test_initialization_transform(mock_read_csv, repo_setup):
@@ -36,9 +39,9 @@ def test_initialization_transform(mock_read_csv, repo_setup):
 
     repo = CSVGeoDataRepository(file_path)
 
-    # pylint: disable=protected-access
-    assert repo._df["PLZ"].dtype == "object" # pandas object type for strings
+    assert repo._df["PLZ"].dtype == "object"  # pandas object type for strings
     assert repo._df.iloc[0]["PLZ"] == "10115"
+
 
 @patch("src.shared.infrastructure.repositories.CSVGeoDataRepository.GeoLocation")
 @patch("pandas.read_csv")
@@ -65,8 +68,9 @@ def test_fetch_geolocation_data_found(mock_read_csv, mock_geo_location_cls, repo
 
     mock_geo_location_cls.assert_called_once()
     call_args = mock_geo_location_cls.call_args[1]
-    assert call_args['postal_code'] == mock_postal
-    assert "POLYGON" in str(call_args['boundary'])
+    assert call_args["postal_code"] == mock_postal
+    assert "POLYGON" in str(call_args["boundary"])
+
 
 @patch("pandas.read_csv")
 def test_fetch_geolocation_data_not_found(mock_read_csv, repo_setup):
@@ -86,6 +90,7 @@ def test_fetch_geolocation_data_not_found(mock_read_csv, repo_setup):
 
     assert result is None
 
+
 @patch("pandas.read_csv")
 def test_get_all_postal_codes(mock_read_csv, repo_setup):
     """
@@ -104,6 +109,7 @@ def test_get_all_postal_codes(mock_read_csv, repo_setup):
     assert 10247 in plz_list
     assert isinstance(plz_list[0], int)
 
+
 @patch("pandas.read_csv")
 def test_get_all_postal_codes_error_handling(mock_read_csv, repo_setup):
     """
@@ -118,7 +124,7 @@ def test_get_all_postal_codes_error_handling(mock_read_csv, repo_setup):
     # We patch _transform because normally __init__ would crash if PLZ is missing.
     # By suppressing _transform, we can successfully create the repo object
     # and verify that get_all_postal_codes handles the missing column safely.
-    with patch.object(CSVGeoDataRepository, '_transform'):
+    with patch.object(CSVGeoDataRepository, "_transform"):
         repo = CSVGeoDataRepository(file_path)
         plz_list = repo.get_all_postal_codes()
 

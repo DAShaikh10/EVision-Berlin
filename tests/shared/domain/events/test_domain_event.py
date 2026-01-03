@@ -1,11 +1,13 @@
-"""Tests for Domain Event."""
-# pylint: disable=missing-class-docstring
+"""
+Shared Domain Tests.
+"""
 
 from dataclasses import FrozenInstanceError
 from datetime import datetime
 import pytest
 
 from src.shared.domain.events.DomainEvent import DomainEvent
+
 
 def test_default_values():
     """
@@ -17,6 +19,7 @@ def test_default_values():
     assert len(event.event_id) > 0
     assert isinstance(event.occurred_at, datetime)
 
+
 def test_immutability():
     """
     Test that DomainEvent attributes cannot be modified (frozen=True).
@@ -26,15 +29,18 @@ def test_immutability():
     with pytest.raises(FrozenInstanceError):
         event.event_id = "new-id"
 
+
 def test_event_type():
     """
     Test that event_type returns the correct class name.
     """
+
     class MockEvent(DomainEvent):
         pass
 
     event = MockEvent()
     assert event.event_type() == "MockEvent"
+
 
 def test_custom_values():
     """

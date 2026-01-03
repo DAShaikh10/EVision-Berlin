@@ -1,5 +1,4 @@
 """Tests for IDomainEventPublisher."""
-# pylint: disable=abstract-class-instantiated,missing-class-docstring
 
 import pytest
 from src.shared.domain.events.IDomainEventPublisher import IDomainEventPublisher

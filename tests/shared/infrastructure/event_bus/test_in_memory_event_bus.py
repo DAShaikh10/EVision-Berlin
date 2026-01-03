@@ -25,7 +25,6 @@ def test_initialization(event_bus):
     """
     Test that the event bus initializes with an empty subscriber list.
     """
-    # pylint: disable=protected-access
     assert isinstance(event_bus._subscribers, dict)
     assert len(event_bus._subscribers) == 0
 
@@ -134,7 +133,6 @@ def test_prevent_duplicate_subscription(event_bus):
     event_bus.subscribe(SampleEvent, handler) # Duplicate subscription
 
     # Check internal state
-    # pylint: disable=protected-access
     assert len(event_bus._subscribers[SampleEvent]) == 1
 
     event = SampleEvent()

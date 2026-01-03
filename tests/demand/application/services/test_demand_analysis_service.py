@@ -13,8 +13,6 @@ Test categories:
 - Error handling tests
 """
 
-# pylint: disable=redefined-outer-name,unused-argument
-
 # pylint: disable=redefined-outer-name
 
 from unittest.mock import Mock, patch
@@ -487,7 +485,9 @@ class TestEventPublishingIntegration:
         # Event bus should be called to publish events
         assert mock_event_bus.publish.called
 
-    def test_analyze_demand_publishes_high_demand_event_for_high_priority(self, demand_analysis_service, mock_event_bus):
+    def test_analyze_demand_publishes_high_demand_event_for_high_priority(
+        self, demand_analysis_service, mock_event_bus
+    ):
         """Test that high demand event is published for high priority areas."""
         demand_analysis_service.analyze_demand("10115", 50000, 5)
 
