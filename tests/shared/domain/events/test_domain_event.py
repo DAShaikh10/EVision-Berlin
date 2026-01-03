@@ -1,56 +1,46 @@
-import unittest
+import pytest
 from datetime import datetime
 from dataclasses import FrozenInstanceError
 
 from src.shared.domain.events.DomainEvent import DomainEvent
 
-class TestDomainEvent(unittest.TestCase):
+def test_default_values():
     """
-    Unit tests for the abstract base class DomainEvent.
+    Test that event_id and occurred_at are generated automatically.
     """
+    event = DomainEvent()
 
-    def test_default_values(self):
-        """
-        Test that event_id and occurred_at are generated automatically.
-        """
-        # We can instantiate DomainEvent directly since it is a dataclass, 
-        # even though it is conceptually abstract.
-        event = DomainEvent()
+    assert isinstance(event.event_id, str)
+    assert len(event.event_id) > 0
+    assert isinstance(event.occurred_at, datetime)
 
-        self.assertIsInstance(event.event_id, str)
-        self.assertTrue(len(event.event_id) > 0)
-        self.assertIsInstance(event.occurred_at, datetime)
+def test_immutability():
+    """
+    Test that DomainEvent attributes cannot be modified (frozen=True).
+    """
+    event = DomainEvent()
+    
+    with pytest.raises(FrozenInstanceError):
+        event.event_id = "new-id"
 
-    def test_immutability(self):
-        """
-        Test that DomainEvent attributes cannot be modified (frozen=True).
-        """
-        event = DomainEvent()
-        
-        with self.assertRaises(FrozenInstanceError):
-            event.event_id = "new-id"
+def test_event_type():
+    """
+    Test that event_type returns the correct class name.
+    """
+    class MockEvent(DomainEvent):
+        pass
 
-    def test_event_type(self):
-        """
-        Test that event_type returns the correct class name.
-        """
-        class MockEvent(DomainEvent):
-            pass
+    event = MockEvent()
+    assert event.event_type() == "MockEvent"
 
-        event = MockEvent()
-        self.assertEqual(event.event_type(), "MockEvent")
-
-    def test_custom_values(self):
-        """
-        Test that defaults can be overridden if necessary (via kwargs).
-        """
-        custom_id = "12345"
-        custom_date = datetime(2025, 1, 1)
-        
-        event = DomainEvent(event_id=custom_id, occurred_at=custom_date)
-        
-        self.assertEqual(event.event_id, custom_id)
-        self.assertEqual(event.occurred_at, custom_date)
-
-if __name__ == '__main__':
-    unittest.main()
+def test_custom_values():
+    """
+    Test that defaults can be overridden if necessary (via kwargs).
+    """
+    custom_id = "12345"
+    custom_date = datetime(2025, 1, 1)
+    
+    event = DomainEvent(event_id=custom_id, occurred_at=custom_date)
+    
+    assert event.event_id == custom_id
+    assert event.occurred_at == custom_date
