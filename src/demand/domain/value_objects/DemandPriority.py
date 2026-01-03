@@ -3,17 +3,8 @@ Demand Domain Value Object - DemandPriority
 """
 
 from dataclasses import dataclass
-from enum import Enum
 
-
-class PriorityLevel(Enum):
-    """
-    Enumeration for demand priority levels.
-    """
-
-    HIGH = "High"
-    MEDIUM = "Medium"
-    LOW = "Low"
+from src.demand.application.enums import PriorityLevel
 
 
 @dataclass(frozen=True)

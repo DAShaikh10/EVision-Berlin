@@ -4,7 +4,7 @@ Shared Application Service for Charging Station operations.
 
 from typing import List
 
-from src.shared.domain.events import DomainEventBus
+from src.shared.domain.events import IDomainEventPublisher
 from src.shared.domain.entities import ChargingStation
 from src.shared.domain.value_objects import PostalCode
 from src.shared.infrastructure.repositories import ChargingStationRepository
@@ -18,12 +18,12 @@ class ChargingStationService(BaseService):
     Application Service for charging station operations.
     """
 
-    def __init__(self, repository: ChargingStationRepository, event_bus: DomainEventBus):
+    def __init__(self, repository: ChargingStationRepository, event_bus: IDomainEventPublisher):
         """
         Initialize the ChargingStationService.
         Args:
             repository: Repository for charging stations.
-            event_bus: Domain event bus.
+            event_bus: Domain event publisher interface.
         """
 
         super().__init__(repository, event_bus)

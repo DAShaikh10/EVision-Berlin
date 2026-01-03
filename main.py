@@ -12,7 +12,9 @@ from config import pdict  # Serves as the project configuration dictionary.
 from src.shared.infrastructure.logging_config import get_logger, setup_logging
 
 from src.ui.application import StreamlitApp
-from src.shared.domain.events import DomainEventBus, StationSearchPerformedEvent
+from src.shared.application.event_handlers import StationSearchEventHandler
+from src.shared.domain.events import IDomainEventPublisher, StationSearchPerformedEvent
+from src.shared.infrastructure.event_bus import InMemoryEventBus
 from src.shared.infrastructure.repositories import (
     CSVChargingStationRepository,
     CSVGeoDataRepository,
@@ -22,11 +24,12 @@ from src.shared.application.services import (
     ChargingStationService,
     GeoLocationService,
     PostalCodeResidentService,
-    PowerCapacityService
+    PowerCapacityService,
 )
 from src.demand.application.services import DemandAnalysisService
-from src.demand.domain.events import DemandAnalysisCalculatedEvent, HighDemandAreaIdentifiedEvent
 from src.demand.infrastructure.repositories import InMemoryDemandAnalysisRepository
+from src.demand.domain.events import DemandAnalysisCalculatedEvent, HighDemandAreaIdentifiedEvent
+from src.demand.application.event_handlers import DemandAnalysisEventHandler, HighDemandAreaEventHandler
 
 logger = get_logger(__name__)
 
@@ -42,13 +45,9 @@ def setup_repositories():
     dataset_folder: str | None = cwd / pdict["dataset_folder"]
 
     # Initialize repositories with data.
-    charging_station_repo = CSVChargingStationRepository(
-        os.path.join(dataset_folder, pdict["file_lstations"])
-    )
+    charging_station_repo = CSVChargingStationRepository(os.path.join(dataset_folder, pdict["file_lstations"]))
     geo_data_repo = CSVGeoDataRepository(os.path.join(dataset_folder, pdict["file_geodat_plz"]))
-    population_repo = CSVPopulationRepository(
-        os.path.join(dataset_folder, pdict["file_residents"])
-    )
+    population_repo = CSVPopulationRepository(os.path.join(dataset_folder, pdict["file_residents"]))
     demand_analysis_repo = InMemoryDemandAnalysisRepository()
 
     return charging_station_repo, geo_data_repo, population_repo, demand_analysis_repo
@@ -59,7 +58,7 @@ def setup_services(
     geo_data_repo: CSVGeoDataRepository,
     population_repo: CSVPopulationRepository,
     demand_analysis_repo: InMemoryDemandAnalysisRepository,
-    event_bus: DomainEventBus,
+    event_bus: IDomainEventPublisher,
 ):
     """
     Setup all application services.
@@ -94,14 +93,16 @@ def setup_services(
     )
 
 
-def setup_event_handlers(event_bus: DomainEventBus):
+def setup_event_handlers(event_bus: IDomainEventPublisher):
     """
     Setup event handlers for domain events.
     """
-    # Subscribe handlers.
-    event_bus.subscribe(StationSearchPerformedEvent, StationSearchPerformedEvent.log_station_search)
-    event_bus.subscribe(DemandAnalysisCalculatedEvent, DemandAnalysisCalculatedEvent.log_demand_calculation)
-    event_bus.subscribe(HighDemandAreaIdentifiedEvent, HighDemandAreaIdentifiedEvent.log_high_demand_area)
+    # Subscribe handlers for shared events.
+    event_bus.subscribe(StationSearchPerformedEvent, StationSearchEventHandler.handle)
+
+    # Subscribe handlers for demand events.
+    event_bus.subscribe(DemandAnalysisCalculatedEvent, DemandAnalysisEventHandler.handle)
+    event_bus.subscribe(HighDemandAreaIdentifiedEvent, HighDemandAreaEventHandler.handle)
 
 
 def main():
@@ -115,15 +116,15 @@ def main():
     logger.info("Preparing EVision Berlin Application ...")
     logger.info("=" * 80)
 
-    # Initialize Domain Event Bus.
-    event_bus = DomainEventBus()
+    # Initialize Domain Event Bus (infrastructure implementation).
+    event_bus: IDomainEventPublisher = InMemoryEventBus()
 
     try:
-        # 1. Setup repositories.
+        # Setup repositories.
         logger.info("\n[1/4] Setting up repositories...")
         charging_station_repo, geo_data_repo, population_repo, demand_analysis_repo = setup_repositories()
 
-        # 2. Setup services.
+        # Setup services.
         logger.info("[2/4] Setting up application services...")
         (
             postal_code_residents_service,
@@ -131,22 +132,17 @@ def main():
             geolocation_service,
             demand_analysis_service,
             power_capacity_service,
-        ) = setup_services(
-            charging_station_repo, geo_data_repo, population_repo, demand_analysis_repo, event_bus
-        )
+        ) = setup_services(charging_station_repo, geo_data_repo, population_repo, demand_analysis_repo, event_bus)
 
-        # 3. Configure event handlers.
+        # Setup event handlers.
         logger.info("[3/4] Configuring event handlers...")
         setup_event_handlers(event_bus)
 
-        # 4. Prepare Validation Data (Source of Truth)
+        # Prepare Validation Data (Source of Truth)
         # Furthermore, we retrieve the authoritative list of valid Berlin PLZs from the
         # geolocation service to ensure the UI validation matches the underlying data.
-        # Note: Ensure `get_all_plzs()` is implemented in your GeoLocationService.
         valid_berlin_plzs = geolocation_service.get_all_plzs()
-        logger.info(
-            "Loaded %d valid postal codes for validation.", len(valid_berlin_plzs)
-        )
+        logger.info("Loaded %d valid postal codes for validation.", len(valid_berlin_plzs))
 
         logger.info("EVision Berlin Application Preparation Complete!")
 
@@ -161,7 +157,7 @@ def main():
             demand_analysis_service=demand_analysis_service,
             power_capacity_service=power_capacity_service,
             event_bus=event_bus,
-            valid_plzs=valid_berlin_plzs  # <--- NEW: Inject the validation list here
+            valid_plzs=valid_berlin_plzs,
         )
         app.run()
 

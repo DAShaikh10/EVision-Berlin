@@ -4,7 +4,7 @@ Shared Application Base Service
 
 from typing import Optional
 
-from src.shared.domain.events import DomainEventBus
+from src.shared.domain.events import IDomainEventPublisher
 from src.shared.domain.aggregates import BaseAggregate
 
 
@@ -13,7 +13,7 @@ class BaseService:
     Base Service class for Application Services.
     """
 
-    def __init__(self, repository, event_bus: Optional[DomainEventBus] = None):
+    def __init__(self, repository, event_bus: Optional[IDomainEventPublisher] = None):
         self._repository = repository
         self._event_bus = event_bus
 
