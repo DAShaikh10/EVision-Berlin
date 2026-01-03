@@ -51,6 +51,7 @@ jobs:
           # Security: Prevent tests from accessing sensitive environment variables.
           PYTHONDONTWRITEBYTECODE: 1
           PYTHONUTF8: 1
+          PYTHONPATH: ${{ github.workspace }}
 
       # Publish test results with summary.
       - name: Publish Test Results
