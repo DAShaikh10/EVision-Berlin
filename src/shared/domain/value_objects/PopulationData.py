@@ -33,3 +33,4 @@ class PopulationData:
             int: Population count for this postal code area.
         """
         return self.population
+    
