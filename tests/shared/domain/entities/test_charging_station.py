@@ -81,6 +81,10 @@ class TestChargingStationCreation:
         station = ChargingStation("10115", 52.5200, 13.4050, PowerCapacity(0.0))
         assert station.is_fast_charger() is False
 
+
+class TestChargingStationFastChargingBusinessRule:
+    """Test is_fast_charger() business rule."""
+
     def test_is_fast_charger_returns_false_for_normal_charging(self):
         """Test that 22 kW station (normal charging) is not a fast charger."""
         station = ChargingStation("10115", 52.5200, 13.4050, PowerCapacity(22.0))
@@ -121,6 +125,9 @@ class TestChargingStationCreation:
         """Test that 1000 kW station is a fast charger."""
         station = ChargingStation("10115", 52.5200, 13.4050, PowerCapacity(1000.0))
         assert station.is_fast_charger() is True
+
+class TestChargingStationChargingCategoryBusinessRule:
+    """Test get_charging_category() business rule."""
 
     def test_get_charging_category_returns_normal_for_zero_power(self):
         """Test that 0 kW station is categorized as NORMAL."""

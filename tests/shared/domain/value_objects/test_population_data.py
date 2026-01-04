@@ -6,10 +6,12 @@ Test categories:
 - Immutability tests
 - Equality tests
 """
+
 # pylint: disable=redefined-outer-name
 
 import pytest
 from src.shared.domain.value_objects import PopulationData, PostalCode
+
 
 # Test fixtures
 @pytest.fixture
@@ -17,10 +19,12 @@ def valid_postal_code():
     """Fixture for a valid Berlin postal code."""
     return PostalCode("10115")
 
+
 @pytest.fixture
 def another_postal_code():
     """Fixture for another valid Berlin postal code."""
     return PostalCode("12045")
+
 
 class TestPopulationDataValidation:
     """Test validation logic in __post_init__."""
@@ -41,6 +45,7 @@ class TestPopulationDataValidation:
         with pytest.raises(ValueError, match="Population cannot be negative"):
             PopulationData(postal_code=valid_postal_code, population=-1000)
 
+
 class TestPopulationDataGetPopulation:
     """Test get_population query method."""
 
@@ -48,6 +53,7 @@ class TestPopulationDataGetPopulation:
         """Test that get_population returns the correct population value."""
         pop_data = PopulationData(postal_code=valid_postal_code, population=30000)
         assert pop_data.get_population() == 30000
+
 
 class TestPopulationDataImmutability:
     """Test immutability of PopulationData."""
@@ -57,6 +63,7 @@ class TestPopulationDataImmutability:
         pop_data = PopulationData(postal_code=valid_postal_code, population=30000)
         with pytest.raises(AttributeError):
             pop_data.population = 50000
+
 
 class TestPopulationDataEquality:
     """Test equality and comparison."""
@@ -71,6 +78,7 @@ class TestPopulationDataEquality:
         assert p1 == p2
         assert p1 != p3
         assert p1 != p4
+
 
 class TestPopulationDataRepr:
     """Test string representation."""
