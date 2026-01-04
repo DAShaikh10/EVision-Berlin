@@ -7,30 +7,37 @@ Test categories:
 - Equality tests
 """
 # pylint: disable=redefined-outer-name
+
 import pytest
 from src.shared.domain.value_objects import PopulationData, PostalCode
 
+# Test fixtures
 @pytest.fixture
 def valid_postal_code():
+    """Fixture for a valid Berlin postal code."""
     return PostalCode("10115")
 
 @pytest.fixture
 def another_postal_code():
+    """Fixture for another valid Berlin postal code."""
     return PostalCode("12045")
 
 class TestPopulationDataValidation:
     """Test validation logic in __post_init__."""
 
     def test_valid_population_data_creation(self, valid_postal_code):
+        """Test creating a valid PopulationData instance."""
         pop_data = PopulationData(postal_code=valid_postal_code, population=30000)
         assert pop_data.postal_code == valid_postal_code
         assert pop_data.population == 30000
 
     def test_zero_population_is_valid(self, valid_postal_code):
+        """Test that zero population is valid."""
         pop_data = PopulationData(postal_code=valid_postal_code, population=0)
         assert pop_data.population == 0
 
     def test_negative_population_raises_value_error(self, valid_postal_code):
+        """Test that negative population raises ValueError."""
         with pytest.raises(ValueError, match="Population cannot be negative"):
             PopulationData(postal_code=valid_postal_code, population=-1000)
 
@@ -38,6 +45,7 @@ class TestPopulationDataGetPopulation:
     """Test get_population query method."""
 
     def test_get_population_returns_correct_value(self, valid_postal_code):
+        """Test that get_population returns the correct population value."""
         pop_data = PopulationData(postal_code=valid_postal_code, population=30000)
         assert pop_data.get_population() == 30000
 
@@ -45,6 +53,7 @@ class TestPopulationDataImmutability:
     """Test immutability of PopulationData."""
 
     def test_cannot_modify_population(self, valid_postal_code):
+        """Test that population attribute cannot be modified."""
         pop_data = PopulationData(postal_code=valid_postal_code, population=30000)
         with pytest.raises(AttributeError):
             pop_data.population = 50000
@@ -53,6 +62,7 @@ class TestPopulationDataEquality:
     """Test equality and comparison."""
 
     def test_equality(self, valid_postal_code, another_postal_code):
+        """Test equality between different PopulationData instances."""
         p1 = PopulationData(valid_postal_code, 100)
         p2 = PopulationData(valid_postal_code, 100)
         p3 = PopulationData(valid_postal_code, 200)
@@ -66,6 +76,7 @@ class TestPopulationDataRepr:
     """Test string representation."""
 
     def test_repr_contains_data(self, valid_postal_code):
+        """Test that repr contains postal code and population information."""
         pop_data = PopulationData(postal_code=valid_postal_code, population=30000)
         assert "30000" in repr(pop_data)
         assert "10115" in repr(pop_data)
