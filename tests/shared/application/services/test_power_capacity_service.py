@@ -13,9 +13,9 @@ Test categories:
 
 from unittest.mock import Mock
 
-import pandas as pd
 import pytest
 
+from src.shared.application.dtos import PowerCapacityDTO
 from src.shared.application.services import PowerCapacityService
 from src.shared.domain.entities import ChargingStation
 from src.shared.domain.value_objects import PostalCode, PowerCapacity
@@ -88,17 +88,20 @@ class TestPowerCapacityServiceInitialization:
 class TestGetPowerCapacityByPostalCode:
     """Test get_power_capacity_by_postal_code method."""
 
-    def test_returns_dataframe_with_correct_columns(
+    def test_returns_list_of_dtos_with_correct_attributes(
         self, power_capacity_service, valid_postal_code, mock_station_list, mock_repository
     ):
-        """Test that method returns DataFrame with correct columns."""
+        """Test that method returns list of DTOs with correct attributes."""
         mock_repository.find_stations_by_postal_code.return_value = mock_station_list
 
         result = power_capacity_service.get_power_capacity_by_postal_code([valid_postal_code])
 
-        assert isinstance(result, pd.DataFrame)
-        assert list(result.columns) == ["postal_code", "total_capacity_kw", "station_count"]
+        assert isinstance(result, list)
         assert len(result) == 1
+        assert isinstance(result[0], PowerCapacityDTO)
+        assert hasattr(result[0], "postal_code")
+        assert hasattr(result[0], "total_capacity_kw")
+        assert hasattr(result[0], "station_count")
 
     def test_calculates_total_capacity_correctly(
         self, power_capacity_service, valid_postal_code, mock_station_list, mock_repository
@@ -108,9 +111,9 @@ class TestGetPowerCapacityByPostalCode:
 
         result = power_capacity_service.get_power_capacity_by_postal_code([valid_postal_code])
 
-        assert result.iloc[0]["total_capacity_kw"] == 72.0  # 50.0 + 22.0
-        assert result.iloc[0]["station_count"] == 2
-        assert result.iloc[0]["postal_code"] == "10115"
+        assert result[0].total_capacity_kw == 72.0  # 50.0 + 22.0
+        assert result[0].station_count == 2
+        assert result[0].postal_code == "10115"
 
     def test_handles_postal_code_with_no_stations(self, power_capacity_service, valid_postal_code, mock_repository):
         """Test that method handles postal codes with no stations."""
@@ -118,9 +121,9 @@ class TestGetPowerCapacityByPostalCode:
 
         result = power_capacity_service.get_power_capacity_by_postal_code([valid_postal_code])
 
-        assert result.iloc[0]["total_capacity_kw"] == 0.0
-        assert result.iloc[0]["station_count"] == 0
-        assert result.iloc[0]["postal_code"] == "10115"
+        assert result[0].total_capacity_kw == 0.0
+        assert result[0].station_count == 0
+        assert result[0].postal_code == "10115"
 
     def test_handles_multiple_postal_codes(
         self, power_capacity_service, mock_repository, mock_station_list, mock_charging_station_3
@@ -143,12 +146,11 @@ class TestGetPowerCapacityByPostalCode:
         result = power_capacity_service.get_power_capacity_by_postal_code([postal_code_1, postal_code_2, postal_code_3])
 
         assert len(result) == 3
-        assert result.iloc[0]["postal_code"] == "10115"
-        assert result.iloc[0]["total_capacity_kw"] == 72.0
-        assert result.iloc[1]["postal_code"] == "10117"
-        assert result.iloc[1]["total_capacity_kw"] == 150.0
-        assert result.iloc[2]["postal_code"] == "10119"
-        assert result.iloc[2]["total_capacity_kw"] == 0.0
+        # Find DTOs by postal code since order may vary
+        result_dict = {dto.postal_code: dto for dto in result}
+        assert result_dict["10115"].total_capacity_kw == 72.0
+        assert result_dict["10117"].total_capacity_kw == 150.0
+        assert result_dict["10119"].total_capacity_kw == 0.0
 
     def test_calls_repository_with_correct_postal_code(
         self, power_capacity_service, valid_postal_code, mock_repository
@@ -168,18 +170,15 @@ class TestGetPowerCapacityByPostalCode:
 
         result = power_capacity_service.get_power_capacity_by_postal_code([valid_postal_code])
 
-        assert result.iloc[0]["total_capacity_kw"] == 50.0
-        assert result.iloc[0]["station_count"] == 1
+        assert result[0].total_capacity_kw == 50.0
+        assert result[0].station_count == 1
 
     def test_handles_empty_postal_code_list(self, power_capacity_service):
         """Test that method handles empty postal code list."""
         result = power_capacity_service.get_power_capacity_by_postal_code([])
 
-        assert isinstance(result, pd.DataFrame)
+        assert isinstance(result, list)
         assert len(result) == 0
-        # Empty DataFrame may not have columns defined
-        if len(result.columns) > 0:
-            assert list(result.columns) == ["postal_code", "total_capacity_kw", "station_count"]
 
 
 class TestClassifyCapacityRanges:
@@ -188,82 +187,81 @@ class TestClassifyCapacityRanges:
     def test_classifies_into_categories_correctly(self, power_capacity_service):
         """Test that method classifies postal codes into correct categories."""
         # Create test data with varying capacities
-        capacity_data = {
-            "postal_code": ["10115", "10117", "10119", "10178", "10179"],
-            "total_capacity_kw": [10.0, 50.0, 100.0, 200.0, 300.0],
-            "station_count": [1, 2, 3, 4, 5],
-        }
-        capacity_df = pd.DataFrame(capacity_data)
+        capacity_dtos = [
+            PowerCapacityDTO(postal_code="10115", total_capacity_kw=10.0, station_count=1),
+            PowerCapacityDTO(postal_code="10117", total_capacity_kw=50.0, station_count=2),
+            PowerCapacityDTO(postal_code="10119", total_capacity_kw=100.0, station_count=3),
+            PowerCapacityDTO(postal_code="10178", total_capacity_kw=200.0, station_count=4),
+            PowerCapacityDTO(postal_code="10179", total_capacity_kw=300.0, station_count=5),
+        ]
 
-        range_definitions, result_df = power_capacity_service.classify_capacity_ranges(capacity_df)
+        range_definitions, result_dtos = power_capacity_service.classify_capacity_ranges(capacity_dtos)
 
-        # Check that capacity_category column was added
-        assert "capacity_category" in result_df.columns
-        assert len(result_df) == 5
+        # Check that capacity_category was added
+        assert len(result_dtos) == 5
+        assert all(dto.capacity_category is not None for dto in result_dtos)
 
         # Check range definitions
         assert "Low" in range_definitions
         assert "Medium" in range_definitions
         assert "High" in range_definitions
 
-        # Check that categories are assigned
-        categories = result_df["capacity_category"].unique()
+        # Check that categories are assigned (all have capacity > 0, so no "None")
+        categories = {dto.capacity_category for dto in result_dtos}
         assert "None" not in categories  # All have capacity > 0
 
-    def test_handles_empty_dataframe(self, power_capacity_service):
-        """Test that method handles empty DataFrame."""
-        empty_df = pd.DataFrame(columns=["postal_code", "total_capacity_kw", "station_count"])
+    def test_handles_empty_list(self, power_capacity_service):
+        """Test that method handles empty list."""
+        empty_dtos = []
 
-        range_definitions, result_df = power_capacity_service.classify_capacity_ranges(empty_df)
+        range_definitions, result_dtos = power_capacity_service.classify_capacity_ranges(empty_dtos)
 
         assert range_definitions["Low"] == (0, 0)
         assert range_definitions["Medium"] == (0, 0)
         assert range_definitions["High"] == (0, 0)
-        assert len(result_df) == 0
+        assert len(result_dtos) == 0
 
     def test_handles_all_zero_capacity(self, power_capacity_service):
         """Test that method handles all zero capacity."""
-        capacity_data = {
-            "postal_code": ["10115", "10117", "10119"],
-            "total_capacity_kw": [0.0, 0.0, 0.0],
-            "station_count": [0, 0, 0],
-        }
-        capacity_df = pd.DataFrame(capacity_data)
+        capacity_dtos = [
+            PowerCapacityDTO(postal_code="10115", total_capacity_kw=0.0, station_count=0),
+            PowerCapacityDTO(postal_code="10117", total_capacity_kw=0.0, station_count=0),
+            PowerCapacityDTO(postal_code="10119", total_capacity_kw=0.0, station_count=0),
+        ]
 
-        range_definitions, result_df = power_capacity_service.classify_capacity_ranges(capacity_df)
+        range_definitions, result_dtos = power_capacity_service.classify_capacity_ranges(capacity_dtos)
 
         assert range_definitions["Low"] == (0, 0)
         assert range_definitions["Medium"] == (0, 0)
         assert range_definitions["High"] == (0, 0)
-        # When all capacities are zero, the method returns original DataFrame without capacity_category
-        assert "capacity_category" not in result_df.columns
-        assert len(result_df) == 3
+        # When all capacities are zero, categories should still be set to "None"
+        assert len(result_dtos) == 3
+        assert all(dto.capacity_category == "None" for dto in result_dtos)
 
     def test_classifies_zero_capacity_as_none(self, power_capacity_service):
         """Test that zero capacity is classified as 'None'."""
-        capacity_data = {
-            "postal_code": ["10115", "10117", "10119"],
-            "total_capacity_kw": [0.0, 50.0, 100.0],
-            "station_count": [0, 1, 2],
-        }
-        capacity_df = pd.DataFrame(capacity_data)
+        capacity_dtos = [
+            PowerCapacityDTO(postal_code="10115", total_capacity_kw=0.0, station_count=0),
+            PowerCapacityDTO(postal_code="10117", total_capacity_kw=50.0, station_count=1),
+            PowerCapacityDTO(postal_code="10119", total_capacity_kw=100.0, station_count=2),
+        ]
 
-        _, result_df = power_capacity_service.classify_capacity_ranges(capacity_df)
+        _, result_dtos = power_capacity_service.classify_capacity_ranges(capacity_dtos)
 
-        assert result_df[result_df["postal_code"] == "10115"]["capacity_category"].iloc[0] == "None"
-        assert result_df[result_df["postal_code"] == "10117"]["capacity_category"].iloc[0] in ["Low", "Medium", "High"]
-        assert result_df[result_df["postal_code"] == "10119"]["capacity_category"].iloc[0] in ["Low", "Medium", "High"]
+        result_dict = {dto.postal_code: dto for dto in result_dtos}
+        assert result_dict["10115"].capacity_category == "None"
+        assert result_dict["10117"].capacity_category in ["Low", "Medium", "High"]
+        assert result_dict["10119"].capacity_category in ["Low", "Medium", "High"]
 
     def test_returns_range_definitions(self, power_capacity_service):
         """Test that method returns correct range definitions."""
-        capacity_data = {
-            "postal_code": ["10115", "10117", "10119"],
-            "total_capacity_kw": [10.0, 50.0, 100.0],
-            "station_count": [1, 2, 3],
-        }
-        capacity_df = pd.DataFrame(capacity_data)
+        capacity_dtos = [
+            PowerCapacityDTO(postal_code="10115", total_capacity_kw=10.0, station_count=1),
+            PowerCapacityDTO(postal_code="10117", total_capacity_kw=50.0, station_count=2),
+            PowerCapacityDTO(postal_code="10119", total_capacity_kw=100.0, station_count=3),
+        ]
 
-        range_definitions, _ = power_capacity_service.classify_capacity_ranges(capacity_df)
+        range_definitions, _ = power_capacity_service.classify_capacity_ranges(capacity_dtos)
 
         # Check structure of range definitions
         assert isinstance(range_definitions, dict)
@@ -273,19 +271,19 @@ class TestClassifyCapacityRanges:
             assert isinstance(max_val, (int, float))
             assert min_val <= max_val
 
-    def test_does_not_modify_original_dataframe(self, power_capacity_service):
-        """Test that method does not modify original DataFrame."""
-        capacity_data = {"postal_code": ["10115", "10117"], "total_capacity_kw": [50.0, 100.0], "station_count": [1, 2]}
-        capacity_df = pd.DataFrame(capacity_data)
-        original_columns = list(capacity_df.columns)
+    def test_does_not_modify_original_dtos(self, power_capacity_service):
+        """Test that method does not modify original DTOs."""
+        capacity_dtos = [
+            PowerCapacityDTO(postal_code="10115", total_capacity_kw=50.0, station_count=1),
+            PowerCapacityDTO(postal_code="10117", total_capacity_kw=100.0, station_count=2),
+        ]
 
-        _, result_df = power_capacity_service.classify_capacity_ranges(capacity_df)
+        _, result_dtos = power_capacity_service.classify_capacity_ranges(capacity_dtos)
 
-        # Original should not have capacity_category
-        assert "capacity_category" not in capacity_df.columns
-        assert list(capacity_df.columns) == original_columns
-        # Result should have capacity_category
-        assert "capacity_category" in result_df.columns
+        # Original DTOs should not have capacity_category
+        assert all(dto.capacity_category is None for dto in capacity_dtos)
+        # Result DTOs should have capacity_category
+        assert all(dto.capacity_category is not None for dto in result_dtos)
 
 
 class TestGetColorForCapacity:
@@ -350,97 +348,84 @@ class TestFilterByCapacityCategory:
 
     def test_filters_by_low_category(self, power_capacity_service):
         """Test that method filters by Low category."""
-        capacity_data = {
-            "postal_code": ["10115", "10117", "10119"],
-            "total_capacity_kw": [10.0, 50.0, 100.0],
-            "station_count": [1, 2, 3],
-            "capacity_category": ["Low", "Medium", "High"],
-        }
-        capacity_df = pd.DataFrame(capacity_data)
+        capacity_dtos = [
+            PowerCapacityDTO(postal_code="10115", total_capacity_kw=10.0, station_count=1, capacity_category="Low"),
+            PowerCapacityDTO(postal_code="10117", total_capacity_kw=50.0, station_count=2, capacity_category="Medium"),
+            PowerCapacityDTO(postal_code="10119", total_capacity_kw=100.0, station_count=3, capacity_category="High"),
+        ]
 
-        result = power_capacity_service.filter_by_capacity_category(capacity_df, "Low")
+        result = power_capacity_service.filter_by_capacity_category(capacity_dtos, "Low")
 
         assert len(result) == 1
-        assert result.iloc[0]["postal_code"] == "10115"
-        assert result.iloc[0]["capacity_category"] == "Low"
+        assert result[0].postal_code == "10115"
+        assert result[0].capacity_category == "Low"
 
     def test_filters_by_medium_category(self, power_capacity_service):
         """Test that method filters by Medium category."""
-        capacity_data = {
-            "postal_code": ["10115", "10117", "10119"],
-            "total_capacity_kw": [10.0, 50.0, 100.0],
-            "station_count": [1, 2, 3],
-            "capacity_category": ["Low", "Medium", "High"],
-        }
-        capacity_df = pd.DataFrame(capacity_data)
+        capacity_dtos = [
+            PowerCapacityDTO(postal_code="10115", total_capacity_kw=10.0, station_count=1, capacity_category="Low"),
+            PowerCapacityDTO(postal_code="10117", total_capacity_kw=50.0, station_count=2, capacity_category="Medium"),
+            PowerCapacityDTO(postal_code="10119", total_capacity_kw=100.0, station_count=3, capacity_category="High"),
+        ]
 
-        result = power_capacity_service.filter_by_capacity_category(capacity_df, "Medium")
+        result = power_capacity_service.filter_by_capacity_category(capacity_dtos, "Medium")
 
         assert len(result) == 1
-        assert result.iloc[0]["postal_code"] == "10117"
-        assert result.iloc[0]["capacity_category"] == "Medium"
+        assert result[0].postal_code == "10117"
+        assert result[0].capacity_category == "Medium"
 
     def test_filters_by_high_category(self, power_capacity_service):
         """Test that method filters by High category."""
-        capacity_data = {
-            "postal_code": ["10115", "10117", "10119"],
-            "total_capacity_kw": [10.0, 50.0, 100.0],
-            "station_count": [1, 2, 3],
-            "capacity_category": ["Low", "Medium", "High"],
-        }
-        capacity_df = pd.DataFrame(capacity_data)
+        capacity_dtos = [
+            PowerCapacityDTO(postal_code="10115", total_capacity_kw=10.0, station_count=1, capacity_category="Low"),
+            PowerCapacityDTO(postal_code="10117", total_capacity_kw=50.0, station_count=2, capacity_category="Medium"),
+            PowerCapacityDTO(postal_code="10119", total_capacity_kw=100.0, station_count=3, capacity_category="High"),
+        ]
 
-        result = power_capacity_service.filter_by_capacity_category(capacity_df, "High")
+        result = power_capacity_service.filter_by_capacity_category(capacity_dtos, "High")
 
         assert len(result) == 1
-        assert result.iloc[0]["postal_code"] == "10119"
-        assert result.iloc[0]["capacity_category"] == "High"
+        assert result[0].postal_code == "10119"
+        assert result[0].capacity_category == "High"
 
     def test_returns_all_when_category_is_all(self, power_capacity_service):
-        """Test that method returns all rows when category is 'All'."""
-        capacity_data = {
-            "postal_code": ["10115", "10117", "10119"],
-            "total_capacity_kw": [10.0, 50.0, 100.0],
-            "station_count": [1, 2, 3],
-            "capacity_category": ["Low", "Medium", "High"],
-        }
-        capacity_df = pd.DataFrame(capacity_data)
+        """Test that method returns all DTOs when category is 'All'."""
+        capacity_dtos = [
+            PowerCapacityDTO(postal_code="10115", total_capacity_kw=10.0, station_count=1, capacity_category="Low"),
+            PowerCapacityDTO(postal_code="10117", total_capacity_kw=50.0, station_count=2, capacity_category="Medium"),
+            PowerCapacityDTO(postal_code="10119", total_capacity_kw=100.0, station_count=3, capacity_category="High"),
+        ]
 
-        result = power_capacity_service.filter_by_capacity_category(capacity_df, "All")
+        result = power_capacity_service.filter_by_capacity_category(capacity_dtos, "All")
 
         assert len(result) == 3
-        assert list(result["postal_code"]) == ["10115", "10117", "10119"]
+        assert {dto.postal_code for dto in result} == {"10115", "10117", "10119"}
 
     def test_returns_empty_when_no_matches(self, power_capacity_service):
-        """Test that method returns empty DataFrame when no matches."""
-        capacity_data = {
-            "postal_code": ["10115", "10117"],
-            "total_capacity_kw": [10.0, 50.0],
-            "station_count": [1, 2],
-            "capacity_category": ["Low", "Medium"],
-        }
-        capacity_df = pd.DataFrame(capacity_data)
+        """Test that method returns empty list when no matches."""
+        capacity_dtos = [
+            PowerCapacityDTO(postal_code="10115", total_capacity_kw=10.0, station_count=1, capacity_category="Low"),
+            PowerCapacityDTO(postal_code="10117", total_capacity_kw=50.0, station_count=2, capacity_category="Medium"),
+        ]
 
-        result = power_capacity_service.filter_by_capacity_category(capacity_df, "High")
+        result = power_capacity_service.filter_by_capacity_category(capacity_dtos, "High")
 
         assert len(result) == 0
-        assert list(result.columns) == list(capacity_df.columns)
+        assert isinstance(result, list)
 
     def test_handles_none_category(self, power_capacity_service):
         """Test that method filters by None category."""
-        capacity_data = {
-            "postal_code": ["10115", "10117", "10119"],
-            "total_capacity_kw": [0.0, 50.0, 100.0],
-            "station_count": [0, 2, 3],
-            "capacity_category": ["None", "Medium", "High"],
-        }
-        capacity_df = pd.DataFrame(capacity_data)
+        capacity_dtos = [
+            PowerCapacityDTO(postal_code="10115", total_capacity_kw=0.0, station_count=0, capacity_category="None"),
+            PowerCapacityDTO(postal_code="10117", total_capacity_kw=50.0, station_count=2, capacity_category="Medium"),
+            PowerCapacityDTO(postal_code="10119", total_capacity_kw=100.0, station_count=3, capacity_category="High"),
+        ]
 
-        result = power_capacity_service.filter_by_capacity_category(capacity_df, "None")
+        result = power_capacity_service.filter_by_capacity_category(capacity_dtos, "None")
 
         assert len(result) == 1
-        assert result.iloc[0]["postal_code"] == "10115"
-        assert result.iloc[0]["capacity_category"] == "None"
+        assert result[0].postal_code == "10115"
+        assert result[0].capacity_category == "None"
 
 
 class TestPowerCapacityServiceIntegration:
@@ -462,17 +447,17 @@ class TestPowerCapacityServiceIntegration:
         service = PowerCapacityService(mock_repository)
 
         # Get capacity data
-        capacity_df = service.get_power_capacity_by_postal_code([postal_code_1, postal_code_2])
+        capacity_dtos = service.get_power_capacity_by_postal_code([postal_code_1, postal_code_2])
 
         # Classify ranges
-        range_definitions, classified_df = service.classify_capacity_ranges(capacity_df)
+        range_definitions, classified_dtos = service.classify_capacity_ranges(capacity_dtos)
 
         # Filter by category
-        high_capacity = service.filter_by_capacity_category(classified_df, "High")
+        high_capacity = service.filter_by_capacity_category(classified_dtos, "High")
 
         # Verify results
-        assert len(capacity_df) == 2
-        assert "capacity_category" in classified_df.columns
+        assert len(capacity_dtos) == 2
+        assert all(dto.capacity_category is not None for dto in classified_dtos)
         assert isinstance(range_definitions, dict)
         assert len(high_capacity) >= 0  # At least 0, could be 1 or 2 depending on quantiles
 
@@ -492,15 +477,15 @@ class TestPowerCapacityServiceIntegration:
         mock_repository.find_stations_by_postal_code.side_effect = find_stations_side_effect
         service = PowerCapacityService(mock_repository)
 
-        capacity_df = service.get_power_capacity_by_postal_code(postal_codes)
-        _, classified_df = service.classify_capacity_ranges(capacity_df)
+        capacity_dtos = service.get_power_capacity_by_postal_code(postal_codes)
+        _, classified_dtos = service.classify_capacity_ranges(capacity_dtos)
 
         # Verify all postal codes are present
-        assert len(classified_df) == 3
-        assert set(classified_df["postal_code"]) == {"10115", "10117", "10119"}
+        assert len(classified_dtos) == 3
+        assert {dto.postal_code for dto in classified_dtos} == {"10115", "10117", "10119"}
 
         # Verify categories are assigned
-        assert all(classified_df["capacity_category"].notna())
+        assert all(dto.capacity_category is not None for dto in classified_dtos)
 
     def test_color_generation_for_capacity_data(self, mock_repository, mock_station_list):
         """Test color generation for capacity data."""
@@ -508,11 +493,11 @@ class TestPowerCapacityServiceIntegration:
         mock_repository.find_stations_by_postal_code.return_value = mock_station_list
         service = PowerCapacityService(mock_repository)
 
-        capacity_df = service.get_power_capacity_by_postal_code([postal_code])
-        max_capacity = capacity_df["total_capacity_kw"].max()
+        capacity_dtos = service.get_power_capacity_by_postal_code([postal_code])
+        max_capacity = max(dto.total_capacity_kw for dto in capacity_dtos) if capacity_dtos else 0.0
 
         # Generate colors for each capacity
-        colors = [service.get_color_for_capacity(cap, max_capacity) for cap in capacity_df["total_capacity_kw"]]
+        colors = [service.get_color_for_capacity(dto.total_capacity_kw, max_capacity) for dto in capacity_dtos]
 
         # Verify all colors are valid
         assert all(c.startswith("#") and len(c) == 7 for c in colors)

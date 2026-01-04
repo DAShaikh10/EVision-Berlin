@@ -80,13 +80,33 @@ class PowerCapacityService:
         max_capacity = max(capacities) if capacities else 0.0
 
         if max_capacity == 0:
-            return {"Low": (0, 0), "Medium": (0, 0), "High": (0, 0)}, capacity_dtos
+            # All capacities are zero, set all to "None"
+            capacity_dtos_with_category = [
+                PowerCapacityDTO(
+                    postal_code=dto.postal_code,
+                    total_capacity_kw=dto.total_capacity_kw,
+                    station_count=dto.station_count,
+                    capacity_category="None",
+                )
+                for dto in capacity_dtos
+            ]
+            return {"Low": (0, 0), "Medium": (0, 0), "High": (0, 0)}, capacity_dtos_with_category
 
         # Filter out zero capacity areas for classification
         non_zero_capacities = [cap for cap in capacities if cap > 0]
 
         if len(non_zero_capacities) == 0:
-            return {"Low": (0, 0), "Medium": (0, 0), "High": (0, 0)}, capacity_dtos
+            # All capacities are zero, set all to "None"
+            capacity_dtos_with_category = [
+                PowerCapacityDTO(
+                    postal_code=dto.postal_code,
+                    total_capacity_kw=dto.total_capacity_kw,
+                    station_count=dto.station_count,
+                    capacity_category="None",
+                )
+                for dto in capacity_dtos
+            ]
+            return {"Low": (0, 0), "Medium": (0, 0), "High": (0, 0)}, capacity_dtos_with_category
 
         # Calculate quantiles (33rd and 66th percentiles)
         sorted_capacities = sorted(non_zero_capacities)
