@@ -5,6 +5,7 @@ Shared Application Service for Power Capacity Analysis.
 from typing import Dict, List, Tuple
 
 from src.shared.application.dtos import PowerCapacityDTO
+from src.shared.domain.services import CapacityClassificationService
 from src.shared.domain.value_objects import PostalCode
 from src.shared.infrastructure.repositories import ChargingStationRepository
 
@@ -64,6 +65,8 @@ class PowerCapacityService:
         """
         Classify postal codes into Low, Medium, and High capacity ranges using quantiles.
 
+        This method orchestrates the classification by delegating to the domain service.
+
         Args:
             capacity_dtos: List of PowerCapacityDTO objects with postal code capacity data.
 
@@ -75,67 +78,21 @@ class PowerCapacityService:
         if not capacity_dtos:
             return {"Low": (0, 0), "Medium": (0, 0), "High": (0, 0)}, capacity_dtos
 
-        # Get all capacities and find max
+        # Extract capacities for domain service
         capacities = [dto.total_capacity_kw for dto in capacity_dtos]
-        max_capacity = max(capacities) if capacities else 0.0
 
-        if max_capacity == 0:
-            # All capacities are zero, set all to "None"
-            capacity_dtos_with_category = [
-                PowerCapacityDTO(
-                    postal_code=dto.postal_code,
-                    total_capacity_kw=dto.total_capacity_kw,
-                    station_count=dto.station_count,
-                    capacity_category="None",
-                )
-                for dto in capacity_dtos
-            ]
-            return {"Low": (0, 0), "Medium": (0, 0), "High": (0, 0)}, capacity_dtos_with_category
+        # Delegate classification to domain service (business logic)
+        range_definitions, categories = CapacityClassificationService.classify_capacities(capacities)
 
-        # Filter out zero capacity areas for classification
-        non_zero_capacities = [cap for cap in capacities if cap > 0]
-
-        if len(non_zero_capacities) == 0:
-            # All capacities are zero, set all to "None"
-            capacity_dtos_with_category = [
-                PowerCapacityDTO(
-                    postal_code=dto.postal_code,
-                    total_capacity_kw=dto.total_capacity_kw,
-                    station_count=dto.station_count,
-                    capacity_category="None",
-                )
-                for dto in capacity_dtos
-            ]
-            return {"Low": (0, 0), "Medium": (0, 0), "High": (0, 0)}, capacity_dtos_with_category
-
-        # Calculate quantiles (33rd and 66th percentiles)
-        sorted_capacities = sorted(non_zero_capacities)
-        q33_index = int(len(sorted_capacities) * 0.33)
-        q66_index = int(len(sorted_capacities) * 0.66)
-        q33 = sorted_capacities[q33_index] if q33_index < len(sorted_capacities) else sorted_capacities[-1]
-        q66 = sorted_capacities[q66_index] if q66_index < len(sorted_capacities) else sorted_capacities[-1]
-
-        # Define ranges
-        range_definitions = {"Low": (0, q33), "Medium": (q33, q66), "High": (q66, max_capacity)}
-
-        # Classify each postal code and create new DTOs with category
-        def classify_capacity(capacity: float) -> str:
-            if capacity == 0:
-                return "None"
-            if capacity <= q33:
-                return "Low"
-            if capacity <= q66:
-                return "Medium"
-            return "High"
-
+        # Create DTOs with categories (application layer responsibility)
         capacity_dtos_with_category = [
             PowerCapacityDTO(
                 postal_code=dto.postal_code,
                 total_capacity_kw=dto.total_capacity_kw,
                 station_count=dto.station_count,
-                capacity_category=classify_capacity(dto.total_capacity_kw),
+                capacity_category=category,
             )
-            for dto in capacity_dtos
+            for dto, category in zip(capacity_dtos, categories)
         ]
 
         return range_definitions, capacity_dtos_with_category
