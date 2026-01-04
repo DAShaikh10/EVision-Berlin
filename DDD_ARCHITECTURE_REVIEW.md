@@ -409,7 +409,7 @@ class DemandCalculationService:
 
 ---
 
-### ⚠️ VIOLATION #10: VALUE OBJECT CONTAINS BUSINESS LOGIC
+~~###~~###~~###~###~### ⚠️ VIOLATION #10: VALUE OBJECT CONTA~~
 
 **Severity: MODERATE** 🟡
 
