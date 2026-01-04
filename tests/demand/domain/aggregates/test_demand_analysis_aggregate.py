@@ -23,7 +23,7 @@ from src.demand.domain.events import (
     HighDemandAreaIdentifiedEvent,
 )
 from src.shared.domain.value_objects import PostalCode
-from src.demand.application.dto import DemandAnalysisDTO
+from src.demand.application.dtos import DemandAnalysisDTO
 
 
 # Test fixtures

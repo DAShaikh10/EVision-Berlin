@@ -160,7 +160,7 @@ class StreamlitApp:
             if postal_code_area and resident_data:
                 info_parts = []
                 info_parts.append(f"👥 Pop: {resident_data.get_population():,}")
-                info_parts.append(f"⚡ Stations: {postal_code_area.get_station_count()}")
+                info_parts.append(f"⚡ Stations: {postal_code_area.station_count}")
                 streamlit.sidebar.info("\n\n".join(info_parts))
             elif selected_plz != "All areas":
                 # Handle edge case where PLZ is valid geodata but has no resident/station data
@@ -338,7 +338,7 @@ class StreamlitApp:
                         if plz_geometry is not None and plz_geometry.boundary is not None:
                             # Get station count for this postal code
                             postal_code_area = self.charging_station_service.search_by_postal_code(postal_code_obj)
-                            station_count = postal_code_area.get_station_count() if postal_code_area else 0
+                            station_count = postal_code_area.station_count if postal_code_area else 0
 
                             # Calculate color based on population (orange gradient)
                             # Higher population = darker orange
@@ -596,7 +596,7 @@ class StreamlitApp:
                 station_data = []
                 for postal_code in postal_codes:
                     postal_code_area = self.charging_station_service.search_by_postal_code(postal_code)
-                    station_count = postal_code_area.get_station_count() if postal_code_area else 0
+                    station_count = postal_code_area.station_count if postal_code_area else 0
 
                     # Get population data as well
                     resident_data = self.postal_code_residents_service.get_resident_data(postal_code)
@@ -726,7 +726,7 @@ class StreamlitApp:
                         {
                             "postal_code": postal_code.value,
                             "population": resident_data.get_population(),
-                            "station_count": postal_code_area.get_station_count(),
+                            "station_count": postal_code_area.station_count,
                         }
                     )
 
@@ -767,7 +767,7 @@ class StreamlitApp:
                         # Convert boundary to GeoJSON
                         boundary_geojson = json.loads(plz_geometry.boundary.to_json())
 
-                        # Get urgency score from demand priority
+                        # Get demand metrics from DTO
                         urgency_score = analysis.urgency_score
                         residents_per_station = analysis.residents_per_station
 
@@ -868,17 +868,13 @@ class StreamlitApp:
                     {
                         "postal_code": postal_code.value,
                         "population": resident_data.get_population(),
-                        "station_count": postal_code_area.get_station_count(),
+                        "station_count": postal_code_area.station_count,
                     }
                 )
 
         # Perform batch analysis
         if areas_data:
-            results = self.demand_analysis_service.analyze_multiple_areas(areas_data)
-
-            # Convert DTOs to dicts for DataFrame
-            results = [r.to_dict() for r in results]
-
+            analyses = self.demand_analysis_service.analyze_multiple_areas(areas_data)
             # If specific postal code selected, show detailed analysis
             if selected_postal_code and selected_postal_code != "All areas":
                 streamlit.subheader(f"🔍 Detailed Analysis: {selected_postal_code}")
@@ -887,39 +883,37 @@ class StreamlitApp:
                 analysis = self.demand_analysis_service.get_demand_analysis(selected_postal_code)
 
                 if analysis:
-                    # Convert DTO to dict for UI
-                    analysis = analysis.to_dict()
 
                     # Display metrics in columns
                     col1, col2, col3, col4 = streamlit.columns(4)
 
                     with col1:
-                        streamlit.metric("Population", f"{analysis['population']:,}")
+                        streamlit.metric("Population", f"{analysis.population:,}")
 
                     with col2:
-                        streamlit.metric("Charging Stations", analysis["station_count"])
+                        streamlit.metric("Charging Stations", analysis.station_count)
 
                     with col3:
                         priority_color = {"High": "🔴", "Medium": "🟡", "Low": "🟢"}.get(
-                            analysis["demand_priority"], "⚪"
+                            analysis.demand_priority, "⚪"
                         )
-                        streamlit.metric("Priority", f"{priority_color} {analysis['demand_priority']}")
+                        streamlit.metric("Priority", f"{priority_color} {analysis.demand_priority}")
 
                     with col4:
-                        streamlit.metric("Residents/Station", f"{analysis['residents_per_station']:.0f}")
+                        streamlit.metric("Residents/Station", f"{analysis.residents_per_station:.0f}")
 
                     # Coverage assessment
                     streamlit.markdown("---")
                     col_assess1, col_assess2, col_assess3 = streamlit.columns(3)
 
                     with col_assess1:
-                        streamlit.info(f"**Coverage Assessment**\n\n{analysis['coverage_assessment']}")
+                        streamlit.info(f"**Coverage Assessment**\n\n{analysis.coverage_assessment}")
 
                     with col_assess2:
-                        streamlit.info(f"**Urgency Score**\n\n{analysis['urgency_score']:.0f}/100")
+                        streamlit.info(f"**Urgency Score**\n\n{analysis.urgency_score:.0f}/100")
 
                     with col_assess3:
-                        expansion_status = "✅ Yes" if analysis["needs_expansion"] else "❌ No"
+                        expansion_status = "✅ Yes" if analysis.needs_expansion else "❌ No"
                         streamlit.info(f"**Needs Expansion**\n\n{expansion_status}")
 
                     # Recommendations
@@ -957,15 +951,13 @@ class StreamlitApp:
 
             # Get high priority areas
             high_priority_areas = self.demand_analysis_service.get_high_priority_areas()
+            high_priority_dicts = [area.to_dict() for area in high_priority_areas]
 
-            # Convert DTOs to dicts for DataFrame
-            high_priority_areas = [area.to_dict() for area in high_priority_areas]
-
-            if high_priority_areas:
-                streamlit.markdown(f"**🔴 {len(high_priority_areas)} High Priority Areas Identified**")
+            if high_priority_dicts:
+                streamlit.markdown(f"**🔴 {len(high_priority_dicts)} High Priority Areas Identified**")
 
                 # Display high priority areas
-                high_priority_df = pd.DataFrame(high_priority_areas)
+                high_priority_df = pd.DataFrame(high_priority_dicts)
                 high_priority_df = high_priority_df[
                     [
                         "postal_code",
@@ -992,7 +984,8 @@ class StreamlitApp:
             streamlit.markdown("---")
             streamlit.subheader("📊 All Areas Analysis")
 
-            results_df = pd.DataFrame(results)
+            results_dicts = [analysis.to_dict() for analysis in analyses]
+            results_df = pd.DataFrame(results_dicts)
             results_df = results_df[
                 [
                     "postal_code",
@@ -1044,9 +1037,9 @@ class StreamlitApp:
 
             col_stat1, col_stat2, col_stat3 = streamlit.columns(3)
 
-            high_count = len([r for r in results if r["demand_priority"] == "High"])
-            medium_count = len([r for r in results if r["demand_priority"] == "Medium"])
-            low_count = len([r for r in results if r["demand_priority"] == "Low"])
+            high_count = len([r for r in analyses if r.demand_priority == "High"])
+            medium_count = len([r for r in analyses if r.demand_priority == "Medium"])
+            low_count = len([r for r in analyses if r.demand_priority == "Low"])
 
             with col_stat1:
                 streamlit.metric("🔴 High Priority Areas", high_count)

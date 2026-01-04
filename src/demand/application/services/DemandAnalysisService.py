@@ -2,16 +2,16 @@
 Demand Application Service for Demand Analysis.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from src.shared.infrastructure.logging_config import get_logger
 
 from src.shared.domain.events import IDomainEventPublisher
 from src.shared.domain.value_objects import PostalCode
 from src.shared.application.services import BaseService
+from src.demand.application.dtos import DemandAnalysisDTO
 from src.demand.domain.aggregates import DemandAnalysisAggregate
 from src.demand.infrastructure.repositories import DemandAnalysisRepository
-from src.demand.application.dto import DemandAnalysisDTO
 
 logger = get_logger(__name__)
 
@@ -74,9 +74,9 @@ class DemandAnalysisService(BaseService):
 
         self.publish_events(aggregate)
 
-        return self._to_dto(aggregate)
+        return DemandAnalysisDTO.from_aggregate(aggregate)
 
-    def analyze_multiple_areas(self, areas: List[Dict[str, Any]]) -> List[DemandAnalysisDTO]:
+    def analyze_multiple_areas(self, areas: List[Dict[str, any]]) -> List[DemandAnalysisDTO]:
         """
         Use case: Analyze demand for multiple postal code areas.
 
@@ -84,7 +84,7 @@ class DemandAnalysisService(BaseService):
             areas: List of dicts with 'postal_code', 'population', 'station_count'
 
         Returns:
-            List[DemandAnalysisDTO]: Analysis results for all areas
+            List[DemandAnalysisDTO]: Analysis DTOs for all areas
         """
 
         results = []
@@ -117,7 +117,7 @@ class DemandAnalysisService(BaseService):
         # Sort by urgency score (descending)
         high_priority.sort(key=lambda x: x.demand_priority.get_urgency_score(), reverse=True)
 
-        return [self._to_dto(agg) for agg in high_priority]
+        return [DemandAnalysisDTO.from_aggregate(agg) for agg in high_priority]
 
     def get_demand_analysis(self, postal_code: str) -> Optional[DemandAnalysisDTO]:
         """
@@ -136,7 +136,7 @@ class DemandAnalysisService(BaseService):
         if aggregate is None:
             return None
 
-        return self._to_dto(aggregate)
+        return DemandAnalysisDTO.from_aggregate(aggregate)
 
     def update_demand_analysis(
         self, postal_code: str, population: int = None, station_count: int = None
@@ -174,10 +174,6 @@ class DemandAnalysisService(BaseService):
         # Publish events
         self.publish_events(aggregate)
 
-        return self._to_dto(aggregate)
-
-    def _to_dto(self, aggregate: DemandAnalysisAggregate) -> DemandAnalysisDTO:
-        """Map a domain aggregate to an application DTO."""
         return DemandAnalysisDTO.from_aggregate(aggregate)
 
     def get_recommendations(self, postal_code: str, target_ratio: float = 2000.0) -> Dict:

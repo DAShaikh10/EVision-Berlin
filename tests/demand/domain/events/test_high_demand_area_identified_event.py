@@ -1,4 +1,5 @@
 # pylint: skip-file
+# pylint: disable=duplicate-code
 """Tests for High Demand Area Identified Event."""
 
 from dataclasses import FrozenInstanceError
@@ -8,12 +9,6 @@ import pytest
 
 from src.demand.domain.events import HighDemandAreaIdentifiedEvent
 from src.shared.domain.value_objects import PostalCode
-
-
-@pytest.fixture
-def valid_postal_code():
-    """Create a valid postal code."""
-    return PostalCode("10115")
 
 
 @pytest.fixture
