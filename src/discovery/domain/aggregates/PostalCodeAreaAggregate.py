@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from src.shared.domain.entities import ChargingStation
 from src.shared.domain.aggregates import BaseAggregate
 from src.shared.domain.value_objects import PostalCode
+from src.shared.domain.enums import CoverageLevel
 from src.shared.domain.events import StationSearchPerformedEvent
 
 
@@ -166,7 +167,7 @@ class PostalCodeAreaAggregate(BaseAggregate):
         """
         return self.get_station_count() >= 5 or self.get_fast_charger_count() >= 2
 
-    def get_coverage_level(self) -> str:
+    def get_coverage_level(self) -> CoverageLevel:
         """
         Business logic: Assess infrastructure coverage level for this area.
 
@@ -178,22 +179,22 @@ class PostalCodeAreaAggregate(BaseAggregate):
         - EXCELLENT: 20+ stations with 5+ fast chargers
 
         Returns:
-            str: Coverage level assessment.
+            CoverageLevel: Coverage level assessment.
         """
         count = self.get_station_count()
         fast_count = self.get_fast_charger_count()
 
         if count == 0:
-            return "NO_COVERAGE"
+            return CoverageLevel.NO_COVERAGE
 
         if count >= 20 and fast_count >= 5:
-            return "EXCELLENT"
+            return CoverageLevel.EXCELLENT
         if count >= 10 and fast_count >= 2:
-            return "GOOD"
+            return CoverageLevel.GOOD
         if count >= 5:
-            return "ADEQUATE"
+            return CoverageLevel.ADEQUATE
 
-        return "POOR"
+        return CoverageLevel.POOR
 
     def get_stations_by_category(self) -> dict:
         """
@@ -225,7 +226,7 @@ class PostalCodeAreaAggregate(BaseAggregate):
             "average_power_kw": self.get_average_power_kw(),
             "has_fast_charging": self.has_fast_charging(),
             "is_well_equipped": self.is_well_equipped(),
-            "coverage_level": self.get_coverage_level(),
+            "coverage_level": self.get_coverage_level().value,
         }
 
     def perform_search(self, search_parameters: dict = None):

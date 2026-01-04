@@ -197,5 +197,5 @@ class DemandAnalysisService(BaseService):
             "recommended_total_stations": aggregate.get_station_count() + additional_stations,
             "target_ratio": target_ratio,
             "current_ratio": aggregate.get_residents_per_station(),
-            "coverage_assessment": aggregate.get_coverage_assessment(),
+            "coverage_assessment": aggregate.get_coverage_assessment().value,
         }

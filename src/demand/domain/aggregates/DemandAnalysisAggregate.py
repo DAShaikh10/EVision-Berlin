@@ -4,6 +4,7 @@ Demand Domain Aggregate - Demand Analysis Aggregate Module.
 
 from src.shared.domain.value_objects import PostalCode
 from src.shared.domain.aggregates import BaseAggregate
+from src.shared.domain.enums import CoverageAssessment
 from src.demand.domain.value_objects import DemandPriority, Population, StationCount
 from src.demand.domain.events import (
     DemandAnalysisCalculatedEvent,
@@ -265,23 +266,23 @@ class DemandAnalysisAggregate(BaseAggregate):
 
         return self._demand_priority.residents_per_station > 3000
 
-    def get_coverage_assessment(self) -> str:
+    def get_coverage_assessment(self) -> CoverageAssessment:
         """
         Business logic: Assess infrastructure coverage level.
 
         Returns:
-            str: Coverage assessment ("CRITICAL", "POOR", "ADEQUATE", "GOOD")
+            CoverageAssessment: Coverage assessment
         """
 
         ratio = self.get_residents_per_station()
 
         if ratio > 10000:
-            return "CRITICAL"
+            return CoverageAssessment.CRITICAL
         if ratio > 5000:
-            return "POOR"
+            return CoverageAssessment.POOR
         if ratio > 2000:
-            return "ADEQUATE"
-        return "GOOD"
+            return CoverageAssessment.ADEQUATE
+        return CoverageAssessment.GOOD
 
     def calculate_recommended_stations(self, target_ratio: float = 2000.0) -> int:
         """
@@ -318,5 +319,5 @@ class DemandAnalysisAggregate(BaseAggregate):
             "urgency_score": self._demand_priority.get_urgency_score(),
             "is_high_priority": self.is_high_priority(),
             "needs_expansion": self.needs_infrastructure_expansion(),
-            "coverage_assessment": self.get_coverage_assessment(),
+            "coverage_assessment": self.get_coverage_assessment().value,
         }

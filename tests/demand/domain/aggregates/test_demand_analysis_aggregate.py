@@ -15,6 +15,7 @@ Test categories:
 import pytest
 
 from src.demand.domain.enums import PriorityLevel
+from src.shared.domain.enums import CoverageAssessment
 from src.demand.domain.aggregates import DemandAnalysisAggregate
 from src.demand.domain.value_objects import DemandPriority, Population, StationCount
 from src.demand.domain.events import (
@@ -261,25 +262,25 @@ class TestDemandAnalysisAggregateBusinessRules:
         """Test get_coverage_assessment returns CRITICAL for >10000 ratio."""
         aggregate = DemandAnalysisAggregate.create(postal_code=valid_postal_code, population=50000, station_count=4)
 
-        assert aggregate.get_coverage_assessment() == "CRITICAL"
+        assert aggregate.get_coverage_assessment() == CoverageAssessment.CRITICAL
 
     def test_get_coverage_assessment_returns_poor(self, valid_postal_code):
         """Test get_coverage_assessment returns POOR for 5000-10000 ratio."""
         aggregate = DemandAnalysisAggregate.create(postal_code=valid_postal_code, population=30000, station_count=5)
 
-        assert aggregate.get_coverage_assessment() == "POOR"
+        assert aggregate.get_coverage_assessment() == CoverageAssessment.POOR
 
     def test_get_coverage_assessment_returns_adequate(self, valid_postal_code):
         """Test get_coverage_assessment returns ADEQUATE for 2000-5000 ratio."""
         aggregate = DemandAnalysisAggregate.create(postal_code=valid_postal_code, population=15000, station_count=5)
 
-        assert aggregate.get_coverage_assessment() == "ADEQUATE"
+        assert aggregate.get_coverage_assessment() == CoverageAssessment.ADEQUATE
 
     def test_get_coverage_assessment_returns_good(self, valid_postal_code):
         """Test get_coverage_assessment returns GOOD for <2000 ratio."""
         aggregate = DemandAnalysisAggregate.create(postal_code=valid_postal_code, population=10000, station_count=10)
 
-        assert aggregate.get_coverage_assessment() == "GOOD"
+        assert aggregate.get_coverage_assessment() == CoverageAssessment.GOOD
 
     def test_calculate_recommended_stations_with_default_target(self, high_priority_aggregate):
         """Test calculate_recommended_stations with default target ratio (2000)."""

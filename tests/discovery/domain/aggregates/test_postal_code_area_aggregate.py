@@ -17,6 +17,7 @@ import pytest
 
 from src.shared.domain.entities import ChargingStation
 from src.shared.domain.value_objects import PostalCode
+from src.shared.domain.enums import CoverageLevel
 from src.shared.domain.events import StationSearchPerformedEvent
 from src.discovery.domain.aggregates import PostalCodeAreaAggregate
 
@@ -325,7 +326,7 @@ class TestPostalCodeAreaAggregateBusinessRules:
         """Test get_coverage_level returns NO_COVERAGE when no stations."""
         aggregate = PostalCodeAreaAggregate.create(valid_postal_code)
 
-        assert aggregate.get_coverage_level() == "NO_COVERAGE"
+        assert aggregate.get_coverage_level() == CoverageLevel.NO_COVERAGE
 
     def test_get_coverage_level_poor(self, valid_postal_code, mock_slow_station):
         """Test get_coverage_level returns POOR for < 5 stations."""
@@ -334,7 +335,7 @@ class TestPostalCodeAreaAggregateBusinessRules:
         aggregate.add_station(mock_slow_station)
         aggregate.add_station(mock_slow_station)
 
-        assert aggregate.get_coverage_level() == "POOR"
+        assert aggregate.get_coverage_level() == CoverageLevel.POOR
 
     def test_get_coverage_level_adequate(self, valid_postal_code, mock_slow_station):
         """Test get_coverage_level returns ADEQUATE for 5+ stations."""
@@ -343,7 +344,7 @@ class TestPostalCodeAreaAggregateBusinessRules:
         for _ in range(5):
             aggregate.add_station(mock_slow_station)
 
-        assert aggregate.get_coverage_level() == "ADEQUATE"
+        assert aggregate.get_coverage_level() == CoverageLevel.ADEQUATE
 
     def test_get_coverage_level_good(self, valid_postal_code, mock_charging_station, mock_slow_station):
         """Test get_coverage_level returns GOOD for 10+ stations with 2+ fast chargers."""
@@ -354,7 +355,7 @@ class TestPostalCodeAreaAggregateBusinessRules:
         for _ in range(2):
             aggregate.add_station(mock_charging_station)
 
-        assert aggregate.get_coverage_level() == "GOOD"
+        assert aggregate.get_coverage_level() == CoverageLevel.GOOD
 
     def test_get_coverage_level_excellent(self, valid_postal_code, mock_charging_station, mock_slow_station):
         """Test get_coverage_level returns EXCELLENT for 20+ stations with 5+ fast chargers."""
@@ -365,7 +366,7 @@ class TestPostalCodeAreaAggregateBusinessRules:
         for _ in range(5):
             aggregate.add_station(mock_charging_station)
 
-        assert aggregate.get_coverage_level() == "EXCELLENT"
+        assert aggregate.get_coverage_level() == CoverageLevel.EXCELLENT
 
 
 class TestPostalCodeAreaAggregateDataConversion:
@@ -483,7 +484,7 @@ class TestPostalCodeAreaAggregateIntegration:
         # Verify business rules
         assert aggregate.has_fast_charging() is True
         assert aggregate.is_well_equipped() is True
-        assert aggregate.get_coverage_level() == "POOR"  # Only 3 stations
+        assert aggregate.get_coverage_level() == CoverageLevel.POOR  # Only 3 stations
 
         # Verify event handling
         aggregate.perform_search()
@@ -508,5 +509,5 @@ class TestPostalCodeAreaAggregateIntegration:
         for _ in range(5):
             aggregate.add_station(slow)
 
-        assert aggregate.get_coverage_level() == "ADEQUATE"
+        assert aggregate.get_coverage_level() == CoverageLevel.ADEQUATE
         assert aggregate.is_well_equipped() is True

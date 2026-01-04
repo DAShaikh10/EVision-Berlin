@@ -74,7 +74,7 @@ class CSVChargingStationRepository(ChargingStationRepository, CSVRepository):
                 postal_code=postal_code,
                 latitude=float(row["Breitengrad"]),
                 longitude=float(row["Längengrad"]),
-                power_kw=PowerCapacity(float(row["KW"])),
+                power_capacity=PowerCapacity(float(row["KW"])),
             )
             stations.append(station)
 

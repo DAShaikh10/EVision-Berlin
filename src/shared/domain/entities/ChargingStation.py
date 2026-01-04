@@ -18,11 +18,11 @@ class ChargingStation:
         postal_code: Union[str, PostalCode],
         latitude: float,
         longitude: float,
-        power_kw: Union[float, PowerCapacity],
+        power_capacity: Union[float, PowerCapacity],
         station_id: Optional[str] = None,
     ) -> None:
         # Identity
-        self.id = station_id or self._generate_id(postal_code, latitude, longitude, power_kw)
+        self.id = station_id or self._generate_id(postal_code, latitude, longitude, power_capacity)
 
         # Normalize postal code to value object
         self.postal_code: PostalCode = postal_code if isinstance(postal_code, PostalCode) else PostalCode(str(postal_code))
@@ -31,13 +31,7 @@ class ChargingStation:
         self.longitude = float(longitude)
 
         # Normalize power to value object
-        self.power_capacity: PowerCapacity = power_kw if isinstance(power_kw, PowerCapacity) else PowerCapacity(float(power_kw))
-
-    # Derived/compatibility property
-    @property
-    def power_kw(self) -> float:
-        """Return power in kilowatts (backwards compatibility)."""
-        return self.power_capacity.kilowatts
+        self.power_capacity: PowerCapacity = power_capacity if isinstance(power_capacity, PowerCapacity) else PowerCapacity(float(power_capacity))
 
     def is_fast_charger(self) -> bool:
         """Fast charger if power is at least 50 kW."""
@@ -57,11 +51,11 @@ class ChargingStation:
         postal_code: Union[str, PostalCode],
         latitude: float,
         longitude: float,
-        power_kw: Union[float, PowerCapacity],
+        power_capacity: Union[float, PowerCapacity],
     ) -> str:
         """Generate a deterministic identity based on core attributes."""
         plz_value = postal_code.value if isinstance(postal_code, PostalCode) else str(postal_code)
-        power_value = power_kw.kilowatts if isinstance(power_kw, PowerCapacity) else float(power_kw)
+        power_value = power_capacity.kilowatts if isinstance(power_capacity, PowerCapacity) else float(power_capacity)
         basis = f"{plz_value}:{latitude}:{longitude}:{power_value}"
         return str(uuid.uuid5(uuid.NAMESPACE_URL, basis))
 
@@ -76,5 +70,5 @@ class ChargingStation:
     def __repr__(self) -> str:
         return (
             f"ChargingStation(id={self.id}, postal_code={self.postal_code.value}, "
-            f"lat={self.latitude}, lon={self.longitude}, power_kw={self.power_capacity.kilowatts})"
+            f"lat={self.latitude}, lon={self.longitude}, power_capacity={self.power_capacity.kilowatts}kW)"
         )
