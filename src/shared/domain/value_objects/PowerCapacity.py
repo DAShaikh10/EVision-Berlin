@@ -4,6 +4,8 @@ Shared Domain PowerCapacity Value Object.
 
 from dataclasses import dataclass
 
+from src.shared.domain.constants import PowerThresholds
+
 
 @dataclass(frozen=True)
 class PowerCapacity:
@@ -26,8 +28,10 @@ class PowerCapacity:
         """
         if self.kilowatts < 0:
             raise ValueError("Power capacity cannot be negative")
-        if self.kilowatts > 1000:
-            raise ValueError("Power capacity exceeds maximum reasonable value (1000 kW)")
+        if self.kilowatts > PowerThresholds.MAX_REASONABLE_POWER_KW:
+            raise ValueError(
+                f"Power capacity exceeds maximum reasonable value ({PowerThresholds.MAX_REASONABLE_POWER_KW} kW)"
+            )
 
     def is_fast_charging(self) -> bool:
         """
@@ -38,4 +42,4 @@ class PowerCapacity:
         Returns:
             bool: True if power capacity is >= 50 kW
         """
-        return self.kilowatts >= 50.0
+        return self.kilowatts >= PowerThresholds.FAST_CHARGING_THRESHOLD_KW

@@ -5,6 +5,7 @@ Demand Domain Aggregate - Demand Analysis Aggregate Module.
 from src.shared.domain.value_objects import PostalCode
 from src.shared.domain.aggregates import BaseAggregate
 from src.shared.domain.enums import CoverageAssessment
+from src.shared.domain.constants import InfrastructureThresholds
 from src.demand.domain.value_objects import DemandPriority, Population, StationCount
 from src.demand.domain.events import (
     DemandAnalysisCalculatedEvent,
@@ -264,7 +265,7 @@ class DemandAnalysisAggregate(BaseAggregate):
             bool: True if expansion is needed
         """
 
-        return self._demand_priority.residents_per_station > 3000
+        return self._demand_priority.residents_per_station > InfrastructureThresholds.EXPANSION_NEEDED_RATIO
 
     def get_coverage_assessment(self) -> CoverageAssessment:
         """
@@ -276,15 +277,17 @@ class DemandAnalysisAggregate(BaseAggregate):
 
         ratio = self.get_residents_per_station()
 
-        if ratio > 10000:
+        if ratio > InfrastructureThresholds.CRITICAL_COVERAGE_RATIO:
             return CoverageAssessment.CRITICAL
-        if ratio > 5000:
+        if ratio > InfrastructureThresholds.POOR_COVERAGE_RATIO:
             return CoverageAssessment.POOR
-        if ratio > 2000:
+        if ratio > InfrastructureThresholds.ADEQUATE_COVERAGE_RATIO:
             return CoverageAssessment.ADEQUATE
         return CoverageAssessment.GOOD
 
-    def calculate_recommended_stations(self, target_ratio: float = 2000.0) -> int:
+    def calculate_recommended_stations(
+        self, target_ratio: float = InfrastructureThresholds.TARGET_COVERAGE_RATIO
+    ) -> int:
         """
         Business logic: Calculate recommended number of stations to meet target ratio.
 

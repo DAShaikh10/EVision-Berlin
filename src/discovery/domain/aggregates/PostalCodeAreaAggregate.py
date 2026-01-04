@@ -9,6 +9,7 @@ from src.shared.domain.aggregates import BaseAggregate
 from src.shared.domain.value_objects import PostalCode
 from src.shared.domain.enums import CoverageLevel
 from src.shared.domain.events import StationSearchPerformedEvent
+from src.shared.domain.constants import InfrastructureThresholds
 
 
 class PostalCodeAreaAggregate(BaseAggregate):
@@ -33,29 +34,24 @@ class PostalCodeAreaAggregate(BaseAggregate):
 
         Args:
             postal_code: Postal code identifying the area
-            stations: List of charging stations (defaults to empty list)
+            stations: List of ChargingStation entities (defaults to empty list)
         """
         # Initialize base aggregate event handling.
         super().__init__()
 
-        # Set instance attributes
+        # Set private instance attributes
         self._postal_code = postal_code
-        self._stations = stations if stations is not None else []
+        self._stations = stations.copy() if stations is not None else []
 
-        # Validate invariants
+        # Validate all stations are ChargingStation entities
         for station in self._stations:
             if not isinstance(station, ChargingStation):
                 raise ValueError("All items must be ChargingStation entities")
 
     @property
     def postal_code(self) -> PostalCode:
-        """Get the postal code."""
+        """Get the postal code (read-only property)."""
         return self._postal_code
-
-    @property
-    def stations(self) -> List[ChargingStation]:
-        """Get a copy of the stations list to protect encapsulation."""
-        return self._stations.copy()
 
     @staticmethod
     def create(postal_code: PostalCode) -> "PostalCodeAreaAggregate":
@@ -179,7 +175,10 @@ class PostalCodeAreaAggregate(BaseAggregate):
         Returns:
             bool: True if area meets well-equipped criteria.
         """
-        return self.get_station_count() >= 5 or self.get_fast_charger_count() >= 2
+        return (
+            self.get_station_count() >= InfrastructureThresholds.WELL_EQUIPPED_STATION_COUNT
+            or self.get_fast_charger_count() >= InfrastructureThresholds.WELL_EQUIPPED_FAST_CHARGER_COUNT
+        )
 
     def get_coverage_level(self) -> CoverageLevel:
         """
@@ -201,11 +200,17 @@ class PostalCodeAreaAggregate(BaseAggregate):
         if count == 0:
             return CoverageLevel.NO_COVERAGE
 
-        if count >= 20 and fast_count >= 5:
+        if (
+            count >= InfrastructureThresholds.EXCELLENT_COVERAGE_STATION_COUNT
+            and fast_count >= InfrastructureThresholds.EXCELLENT_COVERAGE_FAST_CHARGER_COUNT
+        ):
             return CoverageLevel.EXCELLENT
-        if count >= 10 and fast_count >= 2:
+        if (
+            count >= InfrastructureThresholds.GOOD_COVERAGE_STATION_COUNT
+            and fast_count >= InfrastructureThresholds.GOOD_COVERAGE_FAST_CHARGER_COUNT
+        ):
             return CoverageLevel.GOOD
-        if count >= 5:
+        if count >= InfrastructureThresholds.ADEQUATE_COVERAGE_THRESHOLD:
             return CoverageLevel.ADEQUATE
 
         return CoverageLevel.POOR

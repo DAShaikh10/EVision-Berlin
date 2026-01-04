@@ -5,6 +5,7 @@ Demand Domain Value Object - DemandPriority
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from src.shared.domain.constants import InfrastructureThresholds
 from src.demand.domain.enums import PriorityLevel
 
 if TYPE_CHECKING:
@@ -19,7 +20,7 @@ class DemandPriority:
     Business Rules:
     - Priority is calculated based on residents per station ratio
     - HIGH: > 5000 residents per station
-    - MEDIUM: 2000-5000 residents per station  
+    - MEDIUM: 2000-5000 residents per station
     - LOW: < 2000 residents per station
 
     Invariants enforced to maintain validity.
@@ -71,17 +72,15 @@ class DemandPriority:
 
         # Handle edge case: no existing stations means highest priority
         if station_value == 0:
-            return DemandPriority(
-                level=PriorityLevel.HIGH, residents_per_station=float(pop_value)
-            )
+            return DemandPriority(level=PriorityLevel.HIGH, residents_per_station=float(pop_value))
 
         # Calculate the ratio of residents to available charging stations
         residents_per_station = pop_value / station_value
 
         # Apply business rules to determine priority level
-        if residents_per_station > 5000:
+        if residents_per_station > InfrastructureThresholds.HIGH_PRIORITY_THRESHOLD:
             level = PriorityLevel.HIGH
-        elif residents_per_station > 2000:
+        elif residents_per_station > InfrastructureThresholds.MEDIUM_PRIORITY_THRESHOLD:
             level = PriorityLevel.MEDIUM
         else:
             level = PriorityLevel.LOW
@@ -113,13 +112,13 @@ class DemandPriority:
         Returns:
             float: Urgency score between 0 and 100.
         """
-        if self.residents_per_station >= 10000:
+        if self.residents_per_station >= InfrastructureThresholds.CRITICAL_URGENCY_THRESHOLD:
             return 100.0  # Critical infrastructure shortage
-        if self.residents_per_station >= 5000:
-            return 75.0   # High demand area
-        if self.residents_per_station >= 2000:
-            return 50.0   # Moderate demand
-        return 25.0   # Adequate coverage
+        if self.residents_per_station >= InfrastructureThresholds.HIGH_URGENCY_THRESHOLD:
+            return 75.0  # High demand area
+        if self.residents_per_station >= InfrastructureThresholds.MEDIUM_URGENCY_THRESHOLD:
+            return 50.0  # Moderate demand
+        return 25.0  # Adequate coverage
 
     def __str__(self) -> str:
         return f"{self.level.value} ({self.residents_per_station:.0f} residents/station)"

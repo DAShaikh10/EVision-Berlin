@@ -4,6 +4,7 @@ Shared Domain Value Object - Postal Code
 
 from dataclasses import dataclass
 
+from src.shared.domain.constants import PostalCodeThresholds
 from src.shared.domain.exceptions import InvalidPostalCodeError
 
 
@@ -24,7 +25,7 @@ class PostalCode:
 
     @staticmethod
     def _is_berlin_postal_code(plz: str) -> bool:
-        return 10000 < int(plz) < 14200
+        return PostalCodeThresholds.MIN_BERLIN_POSTAL_CODE < int(plz) < PostalCodeThresholds.MAX_BERLIN_POSTAL_CODE
 
     def __post_init__(self):
         """

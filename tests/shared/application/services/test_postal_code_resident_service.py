@@ -14,7 +14,6 @@ from unittest.mock import Mock
 import pytest
 
 from src.shared.application.services import BaseService, PostalCodeResidentService
-from src.shared.domain.services import PopulationAnalysisService
 from src.shared.domain.events import IDomainEventPublisher
 from src.shared.domain.exceptions import InvalidPostalCodeError
 from src.shared.domain.value_objects import PostalCode, PopulationData
@@ -232,9 +231,8 @@ class TestGetResidentData:
         result = postal_code_resident_service.get_resident_data(valid_postal_code)
 
         assert result.population == 25000
-        # Check logic via Service, not Value Object
-        assert PopulationAnalysisService.get_density_category(result.population) == "HIGH"
-        assert PopulationAnalysisService.is_high_density(result.population) is True
+        assert result.get_population_density_category() == "HIGH"
+        assert result.is_high_density() is True
 
     def test_handles_different_postal_codes(self, postal_code_resident_service, mock_repository):
         """Test that method handles different postal codes correctly."""
@@ -266,8 +264,8 @@ class TestGetResidentData:
 
         result = postal_code_resident_service.get_resident_data(valid_postal_code)
 
-        assert PopulationAnalysisService.get_density_category(result.population) == "LOW"
-        assert PopulationAnalysisService.is_high_density(result.population) is False
+        assert result.get_population_density_category() == "LOW"
+        assert result.is_high_density() is False
 
     def test_population_data_has_correct_density_category_medium(
         self, postal_code_resident_service, valid_postal_code, mock_repository
@@ -277,8 +275,8 @@ class TestGetResidentData:
 
         result = postal_code_resident_service.get_resident_data(valid_postal_code)
 
-        assert PopulationAnalysisService.get_density_category(result.population) == "MEDIUM"
-        assert PopulationAnalysisService.is_high_density(result.population) is False
+        assert result.get_population_density_category() == "MEDIUM"
+        assert result.is_high_density() is False  # Threshold is > 15000, so 15000 is not high density
 
     def test_population_data_medium_density_boundary_high(
         self, postal_code_resident_service, valid_postal_code, mock_repository
@@ -288,8 +286,8 @@ class TestGetResidentData:
 
         result = postal_code_resident_service.get_resident_data(valid_postal_code)
 
-        assert PopulationAnalysisService.get_density_category(result.population) == "MEDIUM"
-        assert PopulationAnalysisService.is_high_density(result.population) is True
+        assert result.get_population_density_category() == "MEDIUM"  # Still MEDIUM (threshold is 20000)
+        assert result.is_high_density() is True  # But is_high_density() returns True for > 15000
 
     def test_population_data_has_correct_density_category_high(
         self, postal_code_resident_service, valid_postal_code, mock_repository
@@ -299,8 +297,8 @@ class TestGetResidentData:
 
         result = postal_code_resident_service.get_resident_data(valid_postal_code)
 
-        assert PopulationAnalysisService.get_density_category(result.population) == "HIGH"
-        assert PopulationAnalysisService.is_high_density(result.population) is True
+        assert result.get_population_density_category() == "HIGH"
+        assert result.is_high_density() is True
 
     def test_population_data_calculates_demand_ratio(
         self, postal_code_resident_service, valid_postal_code, mock_repository
@@ -310,11 +308,9 @@ class TestGetResidentData:
 
         result = postal_code_resident_service.get_resident_data(valid_postal_code)
 
-        # Test demand ratio calculation via Service
-        ratio_1 = PopulationAnalysisService.calculate_demand_ratio(result.population, 5)
-        ratio_2 = PopulationAnalysisService.calculate_demand_ratio(result.population, 0)
-        assert ratio_1 == 2000.0  # 10000 / 5
-        assert ratio_2 == 10000.0  # 10000 / 1 (min 1)
+        # Test demand ratio calculation
+        assert result.calculate_demand_ratio(5) == 2000.0  # 10000 / 5
+        assert result.calculate_demand_ratio(0) == 10000.0  # 10000 / 1 (min 1)
 
     def test_does_not_publish_events(
         self, postal_code_resident_service, valid_postal_code, mock_repository, mock_event_bus
@@ -363,8 +359,7 @@ class TestPostalCodeResidentServiceIntegration:
         assert isinstance(result, PopulationData)
         assert result.population == 12000
         assert result.postal_code == valid_postal_code
-        # Verify derived data via Service
-        assert PopulationAnalysisService.get_density_category(result.population) == "MEDIUM"
+        assert result.get_population_density_category() == "MEDIUM"
 
         # Verify no events were published
         mock_event_bus.publish.assert_not_called()
@@ -403,7 +398,7 @@ class TestPostalCodeResidentServiceIntegration:
         mock_repository.get_residents_count.return_value = 0
         result = postal_code_resident_service.get_resident_data(postal_code)
         assert result.population == 0
-        assert PopulationAnalysisService.get_density_category(result.population) == "LOW"
+        assert result.get_population_density_category() == "LOW"
 
     def test_service_handles_large_population(self, postal_code_resident_service, valid_postal_code, mock_repository):
         """Test service handles large population values correctly."""
@@ -412,8 +407,8 @@ class TestPostalCodeResidentServiceIntegration:
         result = postal_code_resident_service.get_resident_data(valid_postal_code)
 
         assert result.population == 100000
-        assert PopulationAnalysisService.get_density_category(result.population) == "HIGH"
-        assert PopulationAnalysisService.is_high_density(result.population) is True
+        assert result.get_population_density_category() == "HIGH"
+        assert result.is_high_density() is True
 
 
 class TestPostalCodeBoundedContextInPostalCodeResidentService:

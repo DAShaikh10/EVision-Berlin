@@ -8,6 +8,7 @@ import uuid
 from typing import Optional, Union
 
 from src.shared.domain.value_objects import PostalCode, PowerCapacity
+from src.shared.domain.constants import PowerThresholds
 
 
 class ChargingStation:
@@ -25,7 +26,9 @@ class ChargingStation:
         self.id = station_id or self._generate_id(postal_code, latitude, longitude, power_capacity)
 
         # Normalize postal code to value object
-        self.postal_code: PostalCode = postal_code if isinstance(postal_code, PostalCode) else PostalCode(str(postal_code))
+        self.postal_code: PostalCode = (
+            postal_code if isinstance(postal_code, PostalCode) else PostalCode(str(postal_code))
+        )
 
         self.latitude = float(latitude)
         self.longitude = float(longitude)
@@ -38,14 +41,14 @@ class ChargingStation:
 
     def is_fast_charger(self) -> bool:
         """Fast charger if power is at least 50 kW."""
-        return self.power_capacity.kilowatts >= 50.0
+        return self.power_capacity.kilowatts >= PowerThresholds.FAST_CHARGING_THRESHOLD_KW
 
     def get_charging_category(self) -> str:
         """Classify charger by power output."""
         power = self.power_capacity.kilowatts
-        if power >= 150.0:
+        if power >= PowerThresholds.ULTRA_CHARGING_THRESHOLD_KW:
             return "ULTRA"
-        if power >= 50.0:
+        if power >= PowerThresholds.FAST_CHARGING_THRESHOLD_KW:
             return "FAST"
         return "NORMAL"
 

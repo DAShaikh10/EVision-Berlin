@@ -54,6 +54,13 @@ class TestChargingStationCreation:
 
         assert isinstance(station.power_capacity, PowerCapacity)
 
+    def test_create_charging_station_with_float_auto_converts_to_power_capacity(self):
+        """Test that passing a float for power_capacity auto-converts to PowerCapacity."""
+        station = ChargingStation(postal_code="10115", latitude=52.5200, longitude=13.4050, power_capacity=75.0)
+
+        assert isinstance(station.power_capacity, PowerCapacity)
+        assert station.power_capacity.kilowatts == 75.0
+
     def test_create_charging_station_with_negative_power_raises_error(self):
         """Test that creating a station with negative power raises ValueError."""
         with pytest.raises(ValueError, match="Power capacity cannot be negative"):
@@ -68,21 +75,9 @@ class TestChargingStationCreation:
                 postal_code="10115", latitude=52.5200, longitude=13.4050, power_capacity=PowerCapacity(1500.0)
             )
 
-    def test_create_charging_station_with_float_auto_converts_to_power_capacity(self):
-        """Test that passing a float automatically converts to PowerCapacity."""
-        station = ChargingStation(postal_code="10115", latitude=52.5200, longitude=13.4050, power_capacity=75.0)
-
-        assert isinstance(station.power_capacity, PowerCapacity)
-        assert station.power_capacity.kilowatts == 75.0
-
-
-class TestChargingStationFastChargingBusinessRule:
-    """Test is_fast_charger() business rule."""
-
     def test_is_fast_charger_returns_false_for_zero_power(self):
         """Test that 0 kW station is not a fast charger."""
         station = ChargingStation("10115", 52.5200, 13.4050, PowerCapacity(0.0))
-
         assert station.is_fast_charger() is False
 
     def test_is_fast_charger_returns_false_for_normal_charging(self):
@@ -124,12 +119,7 @@ class TestChargingStationFastChargingBusinessRule:
     def test_is_fast_charger_returns_true_for_maximum_power(self):
         """Test that 1000 kW station is a fast charger."""
         station = ChargingStation("10115", 52.5200, 13.4050, PowerCapacity(1000.0))
-
         assert station.is_fast_charger() is True
-
-
-class TestChargingStationCategoryBusinessRule:
-    """Test get_charging_category() business rule."""
 
     def test_get_charging_category_returns_normal_for_zero_power(self):
         """Test that 0 kW station is categorized as NORMAL."""
@@ -238,8 +228,8 @@ class TestChargingStationGeographicData:
         assert station.longitude == -13.4050
 
 
-class TestChargingStationBoundaryValues:
-    """Test boundary values and edge cases."""
+class TestChargingStationBoundaryConditions:
+    """Test boundary conditions for charging station."""
 
     def test_charging_station_at_fast_charging_boundary(self):
         """Test station exactly at fast charging boundary."""
