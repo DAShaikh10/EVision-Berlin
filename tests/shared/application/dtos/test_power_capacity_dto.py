@@ -7,6 +7,8 @@ Test categories:
 - Immutability
 """
 
+# pylint: disable=no-member
+
 import dataclasses
 
 from src.shared.application.dtos import PowerCapacityDTO
