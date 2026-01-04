@@ -6,6 +6,7 @@ Test categories:
 - Immutability tests
 - Equality tests
 """
+# pylint: disable=redefined-outer-name
 import pytest
 from src.shared.domain.value_objects import PopulationData, PostalCode
 
