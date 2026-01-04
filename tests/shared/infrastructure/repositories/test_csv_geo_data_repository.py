@@ -1,14 +1,17 @@
 """Tests for CSV Geo Data Repository."""
 
-# pylint: disable=redefined-outer-name
+# pylint: disable=redefined-outer-name,protected-access,missing-function-docstring
 
 from unittest.mock import patch, MagicMock
 
 import pytest
 import pandas as pd
 
+from shapely.geometry import Polygon
+
 from src.shared.infrastructure.repositories.CSVGeoDataRepository import CSVGeoDataRepository
 from src.shared.domain.value_objects.PostalCode import PostalCode
+from src.shared.infrastructure.geospatial import GeopandasBoundary
 
 
 @pytest.fixture
@@ -44,8 +47,9 @@ def test_initialization_transform(mock_read_csv, repo_setup):
 
 
 @patch("src.shared.infrastructure.repositories.CSVGeoDataRepository.GeoLocation")
+@patch("src.shared.infrastructure.repositories.CSVGeoDataRepository.CSVGeoDataRepository._coerce_boundary")
 @patch("pandas.read_csv")
-def test_fetch_geolocation_data_found(mock_read_csv, mock_geo_location_cls, repo_setup):
+def test_fetch_geolocation_data_found(mock_read_csv, mock_coerce, mock_geo_location_cls, repo_setup):
     """
     Test fetching geolocation data for an existing postal code.
     """
@@ -58,6 +62,9 @@ def test_fetch_geolocation_data_found(mock_read_csv, mock_geo_location_cls, repo
     mock_postal = MagicMock(spec=PostalCode)
     mock_postal.value = "10115"
 
+    boundary_sentinel = object()
+    mock_coerce.return_value = boundary_sentinel
+
     # Setup GeoLocation Mock return
     expected_geo_loc = MagicMock()
     mock_geo_location_cls.return_value = expected_geo_loc
@@ -69,7 +76,8 @@ def test_fetch_geolocation_data_found(mock_read_csv, mock_geo_location_cls, repo
     mock_geo_location_cls.assert_called_once()
     call_args = mock_geo_location_cls.call_args[1]
     assert call_args["postal_code"] == mock_postal
-    assert "POLYGON" in str(call_args["boundary"])
+    assert call_args["boundary"] is boundary_sentinel
+    mock_coerce.assert_called_once()
 
 
 @patch("pandas.read_csv")
@@ -129,3 +137,38 @@ def test_get_all_postal_codes_error_handling(mock_read_csv, repo_setup):
         plz_list = repo.get_all_postal_codes()
 
     assert plz_list == []
+
+
+def test_coerce_boundary_returns_existing_boundary():
+    repo = CSVGeoDataRepository.__new__(CSVGeoDataRepository)  # bypass __init__
+    boundary = MagicMock(spec=GeopandasBoundary)
+
+    result = CSVGeoDataRepository._coerce_boundary(repo, boundary)
+
+    assert result is boundary
+
+
+def test_coerce_boundary_builds_from_wkt():
+    repo = CSVGeoDataRepository.__new__(CSVGeoDataRepository)  # bypass __init__
+    sentinel = object()
+    with patch(
+        "src.shared.infrastructure.repositories.CSVGeoDataRepository.GeopandasBoundary.from_wkt",
+        return_value=sentinel,
+    ) as mock_from_wkt:
+        result = CSVGeoDataRepository._coerce_boundary(
+            repo, "POLYGON((13 52, 13 53, 14 53, 13 52))"
+        )
+
+    assert result is sentinel
+    mock_from_wkt.assert_called_once()
+
+
+def test_coerce_boundary_wraps_geodataframe():
+    repo = CSVGeoDataRepository.__new__(CSVGeoDataRepository)  # bypass __init__
+    polygon = Polygon([(13.4, 52.5), (13.5, 52.5), (13.5, 52.6), (13.4, 52.6), (13.4, 52.5)])
+
+    result = CSVGeoDataRepository._coerce_boundary(repo, polygon)
+
+    assert isinstance(result, GeopandasBoundary)
+    assert not result.is_empty()
+    assert hasattr(result, "geometry")

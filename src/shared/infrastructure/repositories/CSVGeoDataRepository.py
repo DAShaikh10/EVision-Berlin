@@ -2,8 +2,11 @@
 CSV-based implementation of GeoDataRepository.
 """
 
+import geopandas as gpd
+
+from src.shared.domain.value_objects import GeoLocation, PostalCode
+from src.shared.infrastructure.geospatial import GeopandasBoundary
 from src.shared.infrastructure.logging_config import get_logger
-from src.shared.domain.value_objects import PostalCode, GeoLocation
 
 from .CSVRepository import CSVRepository
 from .GeoDataRepository import GeoDataRepository
@@ -60,14 +63,36 @@ class CSVGeoDataRepository(GeoDataRepository, CSVRepository):
             logger.warning("No geometry found for PLZ: %s", postal_code.value)
             return None
 
-        boundary = result.iloc[0]["geometry"]
-        logger.info("Boundary type: %s", type(boundary))
-        logger.info("Boundary value (first 200 chars): %s", str(boundary)[:200])
+        raw_boundary = result.iloc[0]["geometry"]
+        logger.info("Boundary type: %s", type(raw_boundary))
+        logger.info("Boundary value (first 200 chars): %s", str(raw_boundary)[:200])
+
+        boundary = self._coerce_boundary(raw_boundary)
 
         logger.info("Creating GeoLocation object with postal_code=%s", postal_code.value)
         geo_location = GeoLocation(postal_code=postal_code, boundary=boundary)
         logger.info("✓ GeoLocation created successfully")
         return geo_location
+
+    def _coerce_boundary(self, raw_boundary) -> GeopandasBoundary:
+        """Convert raw boundary data into a GeopandasBoundary."""
+        if isinstance(raw_boundary, GeopandasBoundary):
+            return raw_boundary
+
+        if isinstance(raw_boundary, gpd.GeoDataFrame):
+            return GeopandasBoundary(raw_boundary)
+
+        if isinstance(raw_boundary, str):
+            return GeopandasBoundary.from_wkt(raw_boundary)
+
+        try:
+            gdf = gpd.GeoDataFrame(geometry=gpd.GeoSeries([raw_boundary]))
+            return GeopandasBoundary(gdf)
+        except Exception:  # pragma: no cover - defensive logging
+            logger.error(
+                "Unable to coerce boundary of type %s into GeopandasBoundary", type(raw_boundary), exc_info=True
+            )
+            raise
 
     def get_all_postal_codes(self) -> list[int]:
         """
