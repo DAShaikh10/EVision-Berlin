@@ -2,9 +2,9 @@ name: Security Scanning
 
 on:
   push:
-    branches: [main, ci-improvements-v2]
+    branches: [main]
   pull_request:
-    branches: [main, ci-improvements-v2]
+    branches: [main]
   schedule:
     # Run weekly on Sundays at 6:00 UTC
     - cron: "0 6 * * 0"
