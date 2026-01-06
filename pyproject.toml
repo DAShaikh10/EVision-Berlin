@@ -41,6 +41,11 @@ min-similarity-lines = 10
 # Ignore test files for duplicate code checks
 ignore-imports = true
 
+# Black formatter config.
+[tool.black]
+line-length = 120
+target-version = ['py311']
+
 # Task runner config.
 [tool.taskipy.tasks]
 install = "pip install -r requirements.txt"

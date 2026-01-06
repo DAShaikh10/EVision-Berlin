@@ -5,6 +5,7 @@ seaborn
 streamlit
 streamlit_folium
 scipy
+black # Code formatter.
 pylint # Linter.
 taskipy # Task Runner.
 pytest # Testing framework.
