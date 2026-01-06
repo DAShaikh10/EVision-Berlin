@@ -48,3 +48,16 @@ repos:
       - id: check-merge-conflict
       - id: mixed-line-ending
         args: ["--fix=lf"]
+
+  # Validate pyproject.toml
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.20.2
+    hooks:
+      - id: validate-pyproject
+
+  # Conventional commits (enforce commit message format)
+  - repo: https://github.com/compwa/mirrors-commitlint
+    rev: v19.6.0
+    hooks:
+      - id: commitlint
+        stages: [commit-msg]
