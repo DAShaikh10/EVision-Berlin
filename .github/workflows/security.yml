@@ -1,0 +1,141 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [main, ci-improvements-v2]
+  pull_request:
+    branches: [main, ci-improvements-v2]
+  schedule:
+    # Run weekly on Sundays at 6:00 UTC
+    - cron: "0 6 * * 0"
+
+jobs:
+  dependency-scan:
+    name: Dependency Security Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install safety pip-audit bandit[toml]
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run Safety Check
+        id: safety
+        continue-on-error: true
+        run: |
+          echo "## 🔒 Safety Check - Known Vulnerabilities" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if safety check --json --output safety-report.json; then
+            echo "✅ No known vulnerabilities found in dependencies" >> $GITHUB_STEP_SUMMARY
+            echo "SAFETY_STATUS=passed" >> $GITHUB_ENV
+          else
+            echo "⚠️ Vulnerabilities detected:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            safety check 2>&1 | head -50 >> $GITHUB_STEP_SUMMARY || true
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "SAFETY_STATUS=failed" >> $GITHUB_ENV
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Run pip-audit
+        id: pip-audit
+        continue-on-error: true
+        run: |
+          echo "## 📦 pip-audit - Dependency Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if pip-audit --desc --format json --output pip-audit-report.json; then
+            echo "✅ All dependencies are secure" >> $GITHUB_STEP_SUMMARY
+            echo "AUDIT_STATUS=passed" >> $GITHUB_ENV
+          else
+            echo "⚠️ Issues found:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            pip-audit --desc 2>&1 | head -50 >> $GITHUB_STEP_SUMMARY || true
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "AUDIT_STATUS=failed" >> $GITHUB_ENV
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Run Bandit Security Scan
+        id: bandit
+        continue-on-error: true
+        run: |
+          echo "## 🛡️ Bandit - Code Security Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if bandit -r src/ -f json -o bandit-report.json; then
+            echo "✅ No security issues found in code" >> $GITHUB_STEP_SUMMARY
+            echo "BANDIT_STATUS=passed" >> $GITHUB_ENV
+          else
+            ISSUE_COUNT=$(cat bandit-report.json | grep -o '"issue_confidence":' | wc -l || echo "0")
+            echo "⚠️ Found $ISSUE_COUNT potential security issues" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            bandit -r src/ -f txt 2>&1 | head -50 >> $GITHUB_STEP_SUMMARY || true
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "BANDIT_STATUS=failed" >> $GITHUB_ENV
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload Security Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            *-report.json
+          retention-days: 30
+
+      - name: Check for Critical Vulnerabilities
+        run: |
+          echo "## 🎯 Final Security Assessment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Tool | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          # Use bash variable syntax, not GitHub Actions expressions
+          SAFETY_ICON=$([ "$SAFETY_STATUS" = "passed" ] && echo "✅ Passed" || echo "❌ Failed")
+          AUDIT_ICON=$([ "$AUDIT_STATUS" = "passed" ] && echo "✅ Passed" || echo "❌ Failed")
+          BANDIT_ICON=$([ "$BANDIT_STATUS" = "passed" ] && echo "✅ Passed" || echo "❌ Failed")
+
+          echo "| Safety | $SAFETY_ICON |" >> $GITHUB_STEP_SUMMARY
+          echo "| pip-audit | $AUDIT_ICON |" >> $GITHUB_STEP_SUMMARY
+          echo "| Bandit | $BANDIT_ICON |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "Checking for critical vulnerabilities..."
+
+          # Fail on any known vulnerabilities in dependencies
+          if ! pip-audit --strict; then
+            echo "❌ Critical vulnerabilities found by pip-audit" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+          # Fail on critical/high severity issues from Safety
+          if ! safety check --exit-code; then
+            echo "❌ Critical vulnerabilities found by Safety" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Security scan passed! No critical vulnerabilities found." >> $GITHUB_STEP_SUMMARY
+          echo "✅ No critical vulnerabilities found!"
