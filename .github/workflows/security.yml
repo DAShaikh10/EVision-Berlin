@@ -45,8 +45,8 @@ jobs:
           echo "## 🔒 Safety Check - Known Vulnerabilities" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Use 'scan' instead of deprecated 'check' command
-          if safety scan --json --output safety-report.json 2>&1 | tee safety-output.txt; then
+          # Use --disable-optional-telemetry to avoid authentication prompts in CI/CD
+          if safety scan --disable-optional-telemetry --json --output safety-report.json 2>&1 | tee safety-output.txt; then
             echo "✅ No known vulnerabilities found in dependencies" >> $GITHUB_STEP_SUMMARY
             echo "SAFETY_STATUS=passed" >> $GITHUB_ENV
           else
@@ -138,14 +138,12 @@ jobs:
           fi
 
           # Fail on critical/high severity issues from Safety
-          if ! safety scan --exit-code 2>&1 | tee safety-final.txt; then
+          if ! safety scan --disable-optional-telemetry --exit-code 2>&1 | tee safety-final.txt; then
             # Check if it's actually a failure or just exit code from warnings
             if ! grep -q "0 vulnerabilities reported" safety-final.txt; then
               echo "❌ Critical vulnerabilities found by Safety" >> $GITHUB_STEP_SUMMARY
               exit 1
             fi
-          fi
-            exit 1
           fi
 
           echo "---" >> $GITHUB_STEP_SUMMARY
