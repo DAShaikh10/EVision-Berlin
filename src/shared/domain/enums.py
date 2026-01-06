@@ -70,4 +70,3 @@ class PopulationDensityCategory(Enum):
     LOW = "LOW"  # < 10,000 residents (low density/rural)
     MEDIUM = "MEDIUM"  # 10,000-20,000 residents (suburban/moderate density)
     HIGH = "HIGH"  # > 20,000 residents (dense urban area)
-
