@@ -36,7 +36,6 @@ venv.bak/
 *.iml
 
 # VS Code
-.vscode/
 *.code-workspace
 
 # Jupyter Notebook

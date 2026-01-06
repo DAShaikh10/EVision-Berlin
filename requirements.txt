@@ -5,6 +5,8 @@ seaborn
 streamlit
 streamlit_folium
 scipy
+black # Code formatter.
+pre-commit # Git hooks for code quality.
 pylint # Linter.
 taskipy # Task Runner.
 pytest # Testing framework.
