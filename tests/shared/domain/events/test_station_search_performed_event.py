@@ -6,8 +6,8 @@ from dataclasses import FrozenInstanceError
 from unittest.mock import MagicMock
 import pytest
 
-from src.shared.domain.events.StationSearchPerformedEvent import StationSearchPerformedEvent
-from src.shared.domain.value_objects.PostalCode import PostalCode
+from src.shared.domain.events import StationSearchPerformedEvent
+from src.shared.domain.value_objects import PostalCode
 
 
 @pytest.fixture
