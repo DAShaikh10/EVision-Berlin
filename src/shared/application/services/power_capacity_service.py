@@ -92,7 +92,7 @@ class PowerCapacityService:
                 postal_code=dto.postal_code,
                 total_capacity_kw=dto.total_capacity_kw,
                 station_count=dto.station_count,
-                capacity_category=category.value if hasattr(category, 'value') else category,
+                capacity_category=category.value if hasattr(category, "value") else category,
             )
             for dto, category in zip(capacity_dtos, categories)
         ]
