@@ -17,7 +17,11 @@ import pytest
 
 from src.shared.domain.entities import ChargingStation
 from src.shared.domain.enums import CoverageLevel
-from src.shared.domain.events import StationSearchPerformedEvent, StationSearchFailedEvent
+from src.shared.domain.events import (
+    StationSearchPerformedEvent,
+    StationSearchFailedEvent,
+    NoStationsFoundEvent,
+)
 from src.discovery.domain.aggregates import PostalCodeAreaAggregate
 
 
@@ -449,6 +453,38 @@ class TestPostalCodeAreaAggregateEventHandling:
 
         assert isinstance(event, StationSearchFailedEvent)
         assert event.error_type is None
+
+    def test_record_no_stations_adds_domain_event(self, valid_postal_code):
+        """Test record_no_stations creates and adds a domain event."""
+        aggregate = PostalCodeAreaAggregate.create(valid_postal_code)
+
+        aggregate.record_no_stations()
+
+        assert aggregate.has_domain_events() is True
+        assert aggregate.get_event_count() == 1
+
+    def test_record_no_stations_event_contains_correct_data(self, valid_postal_code):
+        """Test record_no_stations event contains correct postal code."""
+        aggregate = PostalCodeAreaAggregate.create(valid_postal_code)
+
+        aggregate.record_no_stations()
+
+        events = aggregate.get_domain_events()
+        event = events[0]
+
+        assert isinstance(event, NoStationsFoundEvent)
+        assert event.postal_code == valid_postal_code
+
+    def test_record_no_stations_for_empty_aggregate(self, valid_postal_code):
+        """Test record_no_stations works correctly for aggregate with zero stations."""
+        aggregate = PostalCodeAreaAggregate.create(valid_postal_code)
+
+        assert aggregate.get_station_count() == 0
+        aggregate.record_no_stations()
+
+        events = aggregate.get_domain_events()
+        assert len(events) == 1
+        assert isinstance(events[0], NoStationsFoundEvent)
 
 
 class TestPostalCodeAreaAggregateIntegration:

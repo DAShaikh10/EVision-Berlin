@@ -8,7 +8,11 @@ from src.shared.domain.entities import ChargingStation
 from src.shared.domain.aggregates import BaseAggregate
 from src.shared.domain.value_objects import PostalCode
 from src.shared.domain.enums import CoverageLevel
-from src.shared.domain.events import StationSearchPerformedEvent, StationSearchFailedEvent
+from src.shared.domain.events import (
+    StationSearchPerformedEvent,
+    StationSearchFailedEvent,
+    NoStationsFoundEvent,
+)
 from src.shared.domain.constants import InfrastructureThresholds
 
 
@@ -262,4 +266,15 @@ class PostalCodeAreaAggregate(BaseAggregate):
             error_message=error_message,
             error_type=error_type,
         )
+        self._add_domain_event(event)
+
+    def record_no_stations(self):
+        """
+        Business operation: Record a search that found no stations and emit domain event.
+
+        This is different from a failed search - the operation succeeded but returned zero results.
+        Useful for identifying infrastructure gaps and coverage analysis.
+        """
+        # Emit domain event for no stations found
+        event = NoStationsFoundEvent(postal_code=self._postal_code)
         self._add_domain_event(event)

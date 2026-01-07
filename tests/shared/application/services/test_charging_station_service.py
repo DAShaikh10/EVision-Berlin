@@ -17,7 +17,12 @@ import pytest
 from src.shared.domain.entities import ChargingStation
 from src.shared.domain.value_objects import PostalCode
 from src.shared.application.services import BaseService, ChargingStationService
-from src.shared.domain.events import IDomainEventPublisher, StationSearchPerformedEvent, StationSearchFailedEvent
+from src.shared.domain.events import (
+    IDomainEventPublisher,
+    StationSearchPerformedEvent,
+    StationSearchFailedEvent,
+    NoStationsFoundEvent,
+)
 from src.shared.infrastructure.repositories import ChargingStationRepository
 from src.discovery.application.dtos import PostalCodeAreaDTO
 
@@ -153,7 +158,31 @@ class TestSearchByPostalCode:
         # Event bus should have received publish call
         assert mock_event_bus.publish.call_count == 1
         published_event = mock_event_bus.publish.call_args[0][0]
+        assert isinstance(published_event, NoStationsFoundEvent)
+
+    def test_search_publishes_no_stations_found_when_empty(
+        self, charging_station_service, valid_postal_code, mock_repository, mock_event_bus
+    ):
+        """Test that search publishes NoStationsFoundEvent when no stations are found."""
+        mock_repository.find_stations_by_postal_code.return_value = []
+
+        charging_station_service.search_by_postal_code(valid_postal_code)
+
+        published_event = mock_event_bus.publish.call_args[0][0]
+        assert isinstance(published_event, NoStationsFoundEvent)
+        assert published_event.postal_code == valid_postal_code
+
+    def test_search_publishes_performed_event_when_stations_found(
+        self, charging_station_service, valid_postal_code, mock_station_list, mock_repository, mock_event_bus
+    ):
+        """Test that search publishes StationSearchPerformedEvent when stations are found."""
+        mock_repository.find_stations_by_postal_code.return_value = mock_station_list
+
+        charging_station_service.search_by_postal_code(valid_postal_code)
+
+        published_event = mock_event_bus.publish.call_args[0][0]
         assert isinstance(published_event, StationSearchPerformedEvent)
+        assert published_event.stations_found == 3
 
     def test_search_clears_events_after_publishing(self, charging_station_service, valid_postal_code, mock_repository):
         """Test that aggregate events are cleared after publishing."""
@@ -310,14 +339,15 @@ class TestChargingStationServiceIntegration:
     def test_event_contains_correct_search_parameters(
         self, charging_station_service, valid_postal_code, mock_repository, mock_event_bus
     ):
-        """Test that published event contains correct search parameters."""
+        """Test that published event contains correct postal code."""
         mock_repository.find_stations_by_postal_code.return_value = []
 
         charging_station_service.search_by_postal_code(valid_postal_code)
 
         published_event = mock_event_bus.publish.call_args[0][0]
         assert published_event.postal_code.value == valid_postal_code.value
-        assert published_event.stations_found == 0
+        # When no stations found, it's a NoStationsFoundEvent (no stations_found attribute)
+        assert isinstance(published_event, NoStationsFoundEvent)
 
 
 class TestSearchByPostalCodeErrorHandling:

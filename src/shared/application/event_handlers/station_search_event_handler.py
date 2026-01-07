@@ -4,18 +4,23 @@ Shared Application Event Handler - Station Search Events.
 
 from src.shared.infrastructure.logging_config import get_logger
 
-from src.shared.domain.events import StationSearchPerformedEvent, StationSearchFailedEvent
+from src.shared.domain.events import (
+    StationSearchPerformedEvent,
+    StationSearchFailedEvent,
+    NoStationsFoundEvent,
+)
 
 logger = get_logger(__name__)
 
 
 class StationSearchEventHandler:
     """
-    Handler for StationSearchPerformedEvent and StationSearchFailedEvent.
+    Handler for station search events.
 
     Responsibilities:
     - Log search operations for auditing
     - Log search failures for debugging and monitoring
+    - Log searches with no results for coverage gap analysis
     """
 
     @staticmethod
@@ -45,4 +50,17 @@ class StationSearchEventHandler:
             event.postal_code.value,
             event.error_message,
             event.error_type or "Unknown",
+        )
+
+    @staticmethod
+    def handle_no_results(event: NoStationsFoundEvent) -> None:
+        """
+        Handle no stations found event.
+
+        Args:
+            event: The NoStationsFoundEvent instance.
+        """
+        logger.warning(
+            "[EVENT] No stations found for postal code: %s - Infrastructure gap identified",
+            event.postal_code.value,
         )

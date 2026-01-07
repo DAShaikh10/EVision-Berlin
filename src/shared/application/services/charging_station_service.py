@@ -53,7 +53,11 @@ class ChargingStationService(BaseService):
             for station in stations:
                 aggregate.add_station(station)
 
-            aggregate.perform_search(search_parameters={"postal_code": postal_code.value})
+            # Emit appropriate event based on results
+            if len(stations) == 0:
+                aggregate.record_no_stations()
+            else:
+                aggregate.perform_search(search_parameters={"postal_code": postal_code.value})
 
             self.publish_events(aggregate)
 
