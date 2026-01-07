@@ -8,7 +8,7 @@ from src.shared.domain.entities import ChargingStation
 from src.shared.domain.aggregates import BaseAggregate
 from src.shared.domain.value_objects import PostalCode
 from src.shared.domain.enums import CoverageLevel
-from src.shared.domain.events import StationSearchPerformedEvent
+from src.shared.domain.events import StationSearchPerformedEvent, StationSearchFailedEvent
 from src.shared.domain.constants import InfrastructureThresholds
 
 
@@ -245,5 +245,21 @@ class PostalCodeAreaAggregate(BaseAggregate):
             postal_code=self._postal_code,
             stations_found=self.get_station_count(),
             search_parameters=search_parameters,
+        )
+        self._add_domain_event(event)
+
+    def fail_search(self, error_message: str, error_type: str = None):
+        """
+        Business operation: Record a failed search and emit domain event.
+
+        Args:
+            error_message: Description of the error that occurred
+            error_type: Optional type/category of the error
+        """
+        # Emit domain event for failed search
+        event = StationSearchFailedEvent(
+            postal_code=self._postal_code,
+            error_message=error_message,
+            error_type=error_type,
         )
         self._add_domain_event(event)

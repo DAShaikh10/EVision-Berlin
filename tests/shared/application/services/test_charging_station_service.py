@@ -17,7 +17,7 @@ import pytest
 from src.shared.domain.entities import ChargingStation
 from src.shared.domain.value_objects import PostalCode
 from src.shared.application.services import BaseService, ChargingStationService
-from src.shared.domain.events import IDomainEventPublisher, StationSearchPerformedEvent
+from src.shared.domain.events import IDomainEventPublisher, StationSearchPerformedEvent, StationSearchFailedEvent
 from src.shared.infrastructure.repositories import ChargingStationRepository
 from src.discovery.application.dtos import PostalCodeAreaDTO
 
@@ -318,3 +318,80 @@ class TestChargingStationServiceIntegration:
         published_event = mock_event_bus.publish.call_args[0][0]
         assert published_event.postal_code.value == valid_postal_code.value
         assert published_event.stations_found == 0
+
+
+class TestSearchByPostalCodeErrorHandling:
+    """Test error handling in search_by_postal_code method."""
+
+    def test_search_publishes_failed_event_on_exception(
+        self, charging_station_service, valid_postal_code, mock_repository, mock_event_bus
+    ):
+        """Test that search publishes failed event when exception occurs."""
+        mock_repository.find_stations_by_postal_code.side_effect = ValueError("Test error")
+
+        with pytest.raises(ValueError):
+            charging_station_service.search_by_postal_code(valid_postal_code)
+
+        # Event bus should have received publish call for failure event
+        assert mock_event_bus.publish.call_count == 1
+        published_event = mock_event_bus.publish.call_args[0][0]
+        assert isinstance(published_event, StationSearchFailedEvent)
+        assert published_event.postal_code == valid_postal_code
+        assert "Test error" in published_event.error_message
+
+    def test_search_captures_error_type_in_failed_event(
+        self, charging_station_service, valid_postal_code, mock_repository, mock_event_bus
+    ):
+        """Test that failed event captures the error type."""
+        mock_repository.find_stations_by_postal_code.side_effect = ConnectionError("Connection failed")
+
+        with pytest.raises(ConnectionError):
+            charging_station_service.search_by_postal_code(valid_postal_code)
+
+        published_event = mock_event_bus.publish.call_args[0][0]
+        assert published_event.error_type == "ConnectionError"
+
+    def test_search_reraises_exception_after_publishing_event(
+        self, charging_station_service, valid_postal_code, mock_repository
+    ):
+        """Test that search re-raises the exception after publishing failure event."""
+        mock_repository.find_stations_by_postal_code.side_effect = RuntimeError("Critical error")
+
+        with pytest.raises(RuntimeError) as exc_info:
+            charging_station_service.search_by_postal_code(valid_postal_code)
+
+        assert "Critical error" in str(exc_info.value)
+
+    def test_search_handles_repository_timeout(
+        self, charging_station_service, valid_postal_code, mock_repository, mock_event_bus
+    ):
+        """Test handling of repository timeout error."""
+        mock_repository.find_stations_by_postal_code.side_effect = TimeoutError("Request timed out")
+
+        with pytest.raises(TimeoutError):
+            charging_station_service.search_by_postal_code(valid_postal_code)
+
+        published_event = mock_event_bus.publish.call_args[0][0]
+        assert isinstance(published_event, StationSearchFailedEvent)
+        assert published_event.error_type == "TimeoutError"
+        assert "Request timed out" in published_event.error_message
+
+    def test_search_handles_exception_during_station_addition(
+        self, charging_station_service, valid_postal_code, mock_repository, mock_event_bus
+    ):
+        """Test handling of exception during DTO conversion."""
+        # Create a station that will work for add but fail during DTO conversion
+        bad_station = Mock(spec=ChargingStation)
+        bad_station.power_capacity = Mock()
+        bad_station.power_capacity.kilowatts = None  # This will cause issues in calculations
+        bad_station.is_fast_charger = Mock(return_value=True)
+        bad_station.get_charging_category = Mock(return_value="FAST")
+
+        mock_repository.find_stations_by_postal_code.return_value = [bad_station]
+
+        with pytest.raises(Exception):  # Any exception during processing
+            charging_station_service.search_by_postal_code(valid_postal_code)
+
+        # Failed event should be published
+        published_event = mock_event_bus.publish.call_args[0][0]
+        assert isinstance(published_event, StationSearchFailedEvent)

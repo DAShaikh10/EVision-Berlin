@@ -17,7 +17,7 @@ import pytest
 
 from src.shared.domain.entities import ChargingStation
 from src.shared.domain.enums import CoverageLevel
-from src.shared.domain.events import StationSearchPerformedEvent
+from src.shared.domain.events import StationSearchPerformedEvent, StationSearchFailedEvent
 from src.discovery.domain.aggregates import PostalCodeAreaAggregate
 
 
@@ -412,6 +412,43 @@ class TestPostalCodeAreaAggregateEventHandling:
         assert isinstance(event, StationSearchPerformedEvent)
         assert event.postal_code == valid_postal_code
         assert event.stations_found == 2
+
+    def test_fail_search_adds_domain_event(self, valid_postal_code):
+        """Test fail_search creates and adds a domain event."""
+        aggregate = PostalCodeAreaAggregate.create(valid_postal_code)
+
+        aggregate.fail_search(error_message="Test error")
+
+        assert aggregate.has_domain_events() is True
+        assert aggregate.get_event_count() == 1
+
+    def test_fail_search_event_contains_correct_data(self, valid_postal_code):
+        """Test fail_search event contains correct error information."""
+        aggregate = PostalCodeAreaAggregate.create(valid_postal_code)
+        error_message = "Database connection failed"
+        error_type = "ConnectionError"
+
+        aggregate.fail_search(error_message=error_message, error_type=error_type)
+
+        events = aggregate.get_domain_events()
+        event = events[0]
+
+        assert isinstance(event, StationSearchFailedEvent)
+        assert event.postal_code == valid_postal_code
+        assert event.error_message == error_message
+        assert event.error_type == error_type
+
+    def test_fail_search_without_error_type(self, valid_postal_code):
+        """Test fail_search works without error_type parameter."""
+        aggregate = PostalCodeAreaAggregate.create(valid_postal_code)
+
+        aggregate.fail_search(error_message="Unknown error")
+
+        events = aggregate.get_domain_events()
+        event = events[0]
+
+        assert isinstance(event, StationSearchFailedEvent)
+        assert event.error_type is None
 
 
 class TestPostalCodeAreaAggregateIntegration:

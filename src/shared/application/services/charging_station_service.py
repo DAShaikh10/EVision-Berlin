@@ -41,19 +41,32 @@ class ChargingStationService(BaseService):
 
         Returns:
             PostalCodeAreaDTO: DTO containing stations and coverage information.
+
+        Raises:
+            Exception: Re-raises any exception after emitting failure event.
         """
 
         aggregate = PostalCodeAreaAggregate(postal_code=postal_code)
 
-        stations: List[ChargingStation] = self._repository.find_stations_by_postal_code(postal_code)
-        for station in stations:
-            aggregate.add_station(station)
+        try:
+            stations: List[ChargingStation] = self._repository.find_stations_by_postal_code(postal_code)
+            for station in stations:
+                aggregate.add_station(station)
 
-        aggregate.perform_search(search_parameters={"postal_code": postal_code.value})
+            aggregate.perform_search(search_parameters={"postal_code": postal_code.value})
 
-        self.publish_events(aggregate)
+            self.publish_events(aggregate)
 
-        return PostalCodeAreaDTO.from_aggregate(aggregate)
+            return PostalCodeAreaDTO.from_aggregate(aggregate)
+
+        except Exception as e:
+            # Emit failure event
+            error_type = type(e).__name__
+            aggregate.fail_search(error_message=str(e), error_type=error_type)
+            self.publish_events(aggregate)
+
+            # Re-raise the exception for the caller to handle
+            raise
 
     def find_stations_by_postal_code(self, postal_code: PostalCode) -> List[ChargingStation]:
         """
