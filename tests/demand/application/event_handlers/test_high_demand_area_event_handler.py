@@ -106,9 +106,7 @@ class TestHighDemandAreaEventHandlerBasicFunctionality:
     @patch("src.demand.application.event_handlers.high_demand_area_event_handler.logger")
     def test_handle_returns_none(self, high_urgency_event):
         """Test that handle method returns None."""
-        result = HighDemandAreaEventHandler.handle(high_urgency_event)
-
-        assert result is None
+        assert HighDemandAreaEventHandler.handle(high_urgency_event) is None
 
     @patch("src.demand.application.event_handlers.high_demand_area_event_handler.logger")
     def test_handle_is_static_method(self, mock_logger, high_urgency_event):

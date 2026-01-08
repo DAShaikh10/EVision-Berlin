@@ -129,9 +129,7 @@ class TestDemandAnalysisEventHandlerBasicFunctionality:
     @patch("src.demand.application.event_handlers.demand_analysis_event_handler.logger")
     def test_handle_returns_none(self, high_priority_event):
         """Test that handle method returns None."""
-        result = DemandAnalysisEventHandler.handle(high_priority_event)
-
-        assert result is None
+        assert DemandAnalysisEventHandler.handle(high_priority_event) is None
 
     @patch("src.demand.application.event_handlers.demand_analysis_event_handler.logger")
     def test_handle_is_static_method(self, mock_logger, high_priority_event):
