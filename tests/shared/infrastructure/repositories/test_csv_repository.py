@@ -274,6 +274,11 @@ class TestCSVRepositoryIntegration:
         """Test that repository can handle different separators in sequence."""
         mock_read_csv.return_value = sample_dataframe
 
+        repo = ConcreteCSVRepository("test.csv")
+        repo.load_csv(sep=",")
+        repo.load_csv(sep=";")
+        repo.load_csv(sep="\t")
+
         assert mock_read_csv.call_count == 3
         # Verify each call used the correct separator
         assert mock_read_csv.call_args_list[0][1]["sep"] == ","
