@@ -8,6 +8,7 @@ from .station_search_performed_event import StationSearchPerformedEvent
 from .station_search_failed_event import StationSearchFailedEvent
 from .no_stations_found_event import NoStationsFoundEvent
 from .stations_found_event import StationsFoundEvent
+from .postal_code_validated_event import PostalCodeValidatedEvent
 
 __all__ = [
     "DomainEvent",
@@ -16,4 +17,5 @@ __all__ = [
     "StationSearchFailedEvent",
     "NoStationsFoundEvent",
     "StationsFoundEvent",
+    "PostalCodeValidatedEvent",
 ]

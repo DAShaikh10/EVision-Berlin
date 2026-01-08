@@ -13,6 +13,7 @@ from src.shared.domain.events import (
     StationSearchFailedEvent,
     NoStationsFoundEvent,
     StationsFoundEvent,
+    PostalCodeValidatedEvent,
 )
 from src.shared.domain.constants import InfrastructureThresholds
 
@@ -291,4 +292,15 @@ class PostalCodeAreaAggregate(BaseAggregate):
             postal_code=self._postal_code,
             stations_found=self.get_station_count(),
         )
+        self._add_domain_event(event)
+
+    def record_postal_code_validated(self):
+        """
+        Business operation: Record successful postal code validation and emit domain event.
+
+        Emits an event when the postal code has been validated according to domain rules.
+        Useful for tracking validation metrics and auditing.
+        """
+        # Emit domain event for postal code validation
+        event = PostalCodeValidatedEvent(postal_code=self._postal_code)
         self._add_domain_event(event)
