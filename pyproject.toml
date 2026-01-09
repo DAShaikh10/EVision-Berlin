@@ -1,4 +1,5 @@
 [project]
+version = "2.0.0"
 name = "evision-berlin"
 authors = [
     { name = "Amaan Shaikh" },
