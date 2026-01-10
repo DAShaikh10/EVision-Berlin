@@ -2,7 +2,7 @@
 Shared Infrastructure - In-Memory Event Bus Implementation.
 """
 
-from typing import Callable, Dict, List, Type
+from collections.abc import Callable
 
 from src.shared.infrastructure.logging_config import get_logger
 from src.shared.domain.events import DomainEvent, IDomainEventPublisher
@@ -17,9 +17,9 @@ class InMemoryEventBus(IDomainEventPublisher):
 
     def __init__(self):
         """Initialize the event bus with empty subscribers."""
-        self._subscribers: Dict[Type[DomainEvent], List[Callable]] = {}
+        self._subscribers: dict[type[DomainEvent], list[Callable]] = {}
 
-    def subscribe(self, event_type: Type[DomainEvent], handler: Callable[[DomainEvent], None]) -> None:
+    def subscribe(self, event_type: type[DomainEvent], handler: Callable[[DomainEvent], None]) -> None:
         """
         Subscribe a handler to an event type.
 

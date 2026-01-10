@@ -2,8 +2,6 @@
 Shared Application Service for Postal Code Resident Data.
 """
 
-from typing import List
-
 from src.shared.domain.events import IDomainEventPublisher
 from src.shared.domain.value_objects import PostalCode, PopulationData
 from src.shared.infrastructure.repositories import PopulationRepository
@@ -19,7 +17,7 @@ class PostalCodeResidentService(BaseService):
     def __init__(self, repository: PopulationRepository, event_bus: IDomainEventPublisher):
         super().__init__(repository, event_bus)
 
-    def get_all_postal_codes(self, sort: bool = False) -> List[PostalCode]:
+    def get_all_postal_codes(self, sort: bool = False) -> list[PostalCode]:
         """
         Get all postal codes with resident data.
 
@@ -30,7 +28,7 @@ class PostalCodeResidentService(BaseService):
             List of PostalCode value objects.
         """
 
-        postal_codes: List[PostalCode] = self._repository.get_all_postal_codes()
+        postal_codes: list[PostalCode] = self._repository.get_all_postal_codes()
         if sort:
             postal_codes.sort(key=lambda plz: plz.value)
 

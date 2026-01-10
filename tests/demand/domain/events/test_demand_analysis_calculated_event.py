@@ -142,7 +142,7 @@ class TestDemandAnalysisCalculatedEventType:
             demand_priority=valid_demand_priority,
         )
 
-        assert type(event1) == type(event2)
+        assert type(event1) is type(event2)
         assert type(event1).__name__ == "DemandAnalysisCalculatedEvent"
 
 

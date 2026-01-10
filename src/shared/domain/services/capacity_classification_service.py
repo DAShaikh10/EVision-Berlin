@@ -5,8 +5,6 @@ This service encapsulates business logic for classifying power capacities
 into categories (Low, Medium, High, None) based on quantile analysis.
 """
 
-from typing import Dict, List, Tuple
-
 from src.shared.domain.enums import CapacityCategory
 
 
@@ -25,7 +23,7 @@ class CapacityClassificationService:
     """
 
     @staticmethod
-    def calculate_quantiles(capacities: List[float]) -> Tuple[float, float]:
+    def calculate_quantiles(capacities: list[float]) -> tuple[float, float]:
         """
         Calculate the 33rd and 66th percentiles for capacity classification.
 
@@ -72,7 +70,7 @@ class CapacityClassificationService:
         return CapacityCategory.HIGH
 
     @staticmethod
-    def classify_capacities(capacities: List[float]) -> Tuple[Dict[str, Tuple[float, float]], List[str]]:
+    def classify_capacities(capacities: list[float]) -> tuple[dict[str, tuple[float, float]], list[str]]:
         """
         Classify a list of capacities and return range definitions and categories.
 

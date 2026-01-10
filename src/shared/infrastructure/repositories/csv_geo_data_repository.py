@@ -121,7 +121,6 @@ class CSVGeoDataRepository(GeoDataRepository, CSVRepository):
         """
         try:
             if "PLZ" in self._df.columns:
-
                 return self._df["PLZ"].astype(int).unique().tolist()
 
             logger.error("Column 'PLZ' not found in GeoData repository.")

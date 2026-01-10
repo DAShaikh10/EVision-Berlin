@@ -10,6 +10,7 @@ Test categories:
 # pylint: disable=no-member
 
 import dataclasses
+import pytest
 
 from src.shared.application.dtos import PowerCapacityDTO
 
@@ -119,7 +120,7 @@ class TestPowerCapacityDTOImmutability:
 
         try:
             dto.postal_code = "10117"  # type: ignore
-            assert False, "Should have raised FrozenInstanceError"
+            pytest.fail("Should have raised FrozenInstanceError")
         except dataclasses.FrozenInstanceError:
             pass  # Expected
 

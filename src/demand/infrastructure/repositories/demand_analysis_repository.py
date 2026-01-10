@@ -3,7 +3,6 @@ Demand Analysis Infrastructure Repositories module.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
 
 from src.shared.domain.value_objects import PostalCode
 from src.demand.domain.aggregates import DemandAnalysisAggregate
@@ -28,7 +27,7 @@ class DemandAnalysisRepository(ABC):
         """
 
     @abstractmethod
-    def find_by_postal_code(self, postal_code: PostalCode) -> Optional[DemandAnalysisAggregate]:
+    def find_by_postal_code(self, postal_code: PostalCode) -> DemandAnalysisAggregate | None:
         """
         Find demand analysis by postal code.
 
@@ -40,7 +39,7 @@ class DemandAnalysisRepository(ABC):
         """
 
     @abstractmethod
-    def find_all(self) -> List[DemandAnalysisAggregate]:
+    def find_all(self) -> list[DemandAnalysisAggregate]:
         """
         Find all demand analyses.
 

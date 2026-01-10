@@ -2,7 +2,6 @@
 Shared Infrastructure - Population Repository Interface
 """
 
-from typing import List
 from abc import ABC, abstractmethod
 
 from src.shared.domain.value_objects import PostalCode
@@ -15,7 +14,7 @@ class PopulationRepository(ABC):
     """
 
     @abstractmethod
-    def get_all_postal_codes(self) -> List[PostalCode]:
+    def get_all_postal_codes(self) -> list[PostalCode]:
         """
         Get all postal codes with population data.
 

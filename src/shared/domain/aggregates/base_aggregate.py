@@ -2,8 +2,6 @@
 Shared Domain Aggregate - Base Aggregate Module.
 """
 
-from typing import List
-
 from src.shared.domain.events import DomainEvent
 
 
@@ -16,7 +14,7 @@ class BaseAggregate:
         """
         Initialize the base aggregate with empty event list.
         """
-        self._domain_events: List[DomainEvent] = []
+        self._domain_events: list[DomainEvent] = []
 
     def _add_domain_event(self, event: DomainEvent):
         """
@@ -27,7 +25,7 @@ class BaseAggregate:
         """
         self._domain_events.append(event)
 
-    def get_domain_events(self) -> List[DomainEvent]:
+    def get_domain_events(self) -> list[DomainEvent]:
         """
         Return collected domain events.
 

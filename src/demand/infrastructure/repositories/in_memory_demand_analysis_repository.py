@@ -2,8 +2,6 @@
 Demand Analysis In-Memory Repository Module.
 """
 
-from typing import Dict, List, Optional
-
 from src.shared.domain.value_objects import PostalCode
 from src.demand.domain.aggregates import DemandAnalysisAggregate
 
@@ -22,7 +20,7 @@ class InMemoryDemandAnalysisRepository(DemandAnalysisRepository):
         """
         Initialize repository with empty storage.
         """
-        self._storage: Dict[str, DemandAnalysisAggregate] = {}
+        self._storage: dict[str, DemandAnalysisAggregate] = {}
 
     def save(self, aggregate: DemandAnalysisAggregate) -> None:
         """
@@ -37,7 +35,7 @@ class InMemoryDemandAnalysisRepository(DemandAnalysisRepository):
         key = aggregate.postal_code.value
         self._storage[key] = aggregate
 
-    def find_by_postal_code(self, postal_code: PostalCode) -> Optional[DemandAnalysisAggregate]:
+    def find_by_postal_code(self, postal_code: PostalCode) -> DemandAnalysisAggregate | None:
         """
         Find demand analysis by postal code.
 
@@ -52,7 +50,7 @@ class InMemoryDemandAnalysisRepository(DemandAnalysisRepository):
 
         return self._storage.get(postal_code.value)
 
-    def find_all(self) -> List[DemandAnalysisAggregate]:
+    def find_all(self) -> list[DemandAnalysisAggregate]:
         """
         Find all demand analyses.
 
@@ -110,7 +108,7 @@ class InMemoryDemandAnalysisRepository(DemandAnalysisRepository):
         """
         self._storage.clear()
 
-    def find_by_priority_level(self, priority_level: str) -> List[DemandAnalysisAggregate]:
+    def find_by_priority_level(self, priority_level: str) -> list[DemandAnalysisAggregate]:
         """
         Find all analyses with specific priority level.
 

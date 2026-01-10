@@ -2,8 +2,6 @@
 Shared Application Service for Charging Station operations.
 """
 
-from typing import List
-
 from src.shared.domain.events import IDomainEventPublisher
 from src.shared.domain.entities import ChargingStation
 from src.shared.domain.value_objects import PostalCode
@@ -49,7 +47,7 @@ class ChargingStationService(BaseService):
         aggregate = PostalCodeAreaAggregate(postal_code=postal_code)
 
         try:
-            stations: List[ChargingStation] = self._repository.find_stations_by_postal_code(postal_code)
+            stations: list[ChargingStation] = self._repository.find_stations_by_postal_code(postal_code)
             for station in stations:
                 aggregate.add_station(station)
 
@@ -72,7 +70,7 @@ class ChargingStationService(BaseService):
             # Re-raise the exception for the caller to handle
             raise
 
-    def find_stations_by_postal_code(self, postal_code: PostalCode) -> List[ChargingStation]:
+    def find_stations_by_postal_code(self, postal_code: PostalCode) -> list[ChargingStation]:
         """
         Retrieve all charging stations located within a specific postal code area.
 

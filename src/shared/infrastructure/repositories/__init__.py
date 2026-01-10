@@ -11,11 +11,11 @@ from .csv_population_repository import CSVPopulationRepository
 from .geo_data_repository import GeoDataRepository
 
 __all__ = [
+    "CSVChargingStationRepository",
+    "CSVGeoDataRepository",
+    "CSVPopulationRepository",
     "CSVRepository",
     "ChargingStationRepository",
-    "PopulationRepository",
-    "CSVGeoDataRepository",
-    "CSVChargingStationRepository",
-    "CSVPopulationRepository",
     "GeoDataRepository",
+    "PopulationRepository",
 ]

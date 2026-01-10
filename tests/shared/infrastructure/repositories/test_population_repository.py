@@ -10,7 +10,6 @@ Test categories:
 # pylint: disable=redefined-outer-name,abstract-class-instantiated,no-member
 
 import inspect
-from typing import List
 from abc import ABC
 
 import pytest
@@ -24,11 +23,11 @@ from src.shared.infrastructure.repositories import PopulationRepository
 class ConcretePopulationRepository(PopulationRepository):
     """Concrete implementation of PopulationRepository for testing purposes."""
 
-    def __init__(self, postal_codes: List[PostalCode]):
+    def __init__(self, postal_codes: list[PostalCode]):
         """Initialize the concrete repository with a list of postal codes."""
         self._postal_codes = postal_codes
 
-    def get_all_postal_codes(self) -> List[PostalCode]:
+    def get_all_postal_codes(self) -> list[PostalCode]:
         """Get all postal codes."""
         return self._postal_codes.copy()
 
@@ -190,7 +189,7 @@ class TestPopulationRepositoryInterface:
         repo = ConcretePopulationRepository(postal_code_list)
 
         # Should be usable as PopulationRepository
-        def process_repository(repository: PopulationRepository) -> List[PostalCode]:
+        def process_repository(repository: PopulationRepository) -> list[PostalCode]:
             return repository.get_all_postal_codes()
 
         result = process_repository(repo)

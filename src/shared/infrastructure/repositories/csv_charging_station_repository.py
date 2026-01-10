@@ -2,8 +2,6 @@
 Shared Infratructure - CSV Charging Station Repository Implementation
 """
 
-from typing import List
-
 from src.shared.domain.entities import ChargingStation
 from src.shared.domain.value_objects import PostalCode, PowerCapacity
 
@@ -57,7 +55,7 @@ class CSVChargingStationRepository(ChargingStationRepository, CSVRepository):
         self._df["Längengrad"] = self._df["Längengrad"].astype(str).str.replace(",", ".")
         self._df["KW"] = self._df["KW"].astype(str).str.replace(",", ".")
 
-    def find_stations_by_postal_code(self, postal_code: PostalCode) -> List[ChargingStation]:
+    def find_stations_by_postal_code(self, postal_code: PostalCode) -> list[ChargingStation]:
         """
         Find charging stations by postal code.
 
@@ -68,7 +66,7 @@ class CSVChargingStationRepository(ChargingStationRepository, CSVRepository):
         """
 
         charging_stations = self._df[self._df["PLZ"] == postal_code.value]
-        stations: List[ChargingStation] = []
+        stations: list[ChargingStation] = []
         for _, row in charging_stations.iterrows():
             station = ChargingStation(
                 postal_code=postal_code,

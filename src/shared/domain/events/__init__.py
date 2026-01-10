@@ -13,9 +13,9 @@ from .postal_code_validated_event import PostalCodeValidatedEvent
 __all__ = [
     "DomainEvent",
     "IDomainEventPublisher",
-    "StationSearchPerformedEvent",
-    "StationSearchFailedEvent",
     "NoStationsFoundEvent",
-    "StationsFoundEvent",
     "PostalCodeValidatedEvent",
+    "StationSearchFailedEvent",
+    "StationSearchPerformedEvent",
+    "StationsFoundEvent",
 ]

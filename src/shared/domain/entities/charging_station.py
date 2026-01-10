@@ -5,7 +5,6 @@ Shared Domain Charging Station Entity.
 from __future__ import annotations
 
 import uuid
-from typing import Optional, Union
 
 from src.shared.domain.enums import ChargingCategory
 from src.shared.domain.constants import PowerThresholds
@@ -17,11 +16,11 @@ class ChargingStation:
 
     def __init__(
         self,
-        postal_code: Union[str, PostalCode],
+        postal_code: str | PostalCode,
         latitude: float,
         longitude: float,
-        power_capacity: Union[float, PowerCapacity],
-        station_id: Optional[str] = None,
+        power_capacity: float | PowerCapacity,
+        station_id: str | None = None,
     ) -> None:
         # Identity
         self.id = station_id or self._generate_id(postal_code, latitude, longitude, power_capacity)
@@ -55,10 +54,10 @@ class ChargingStation:
 
     def _generate_id(
         self,
-        postal_code: Union[str, PostalCode],
+        postal_code: str | PostalCode,
         latitude: float,
         longitude: float,
-        power_capacity: Union[float, PowerCapacity],
+        power_capacity: float | PowerCapacity,
     ) -> str:
         """Generate a deterministic identity based on core attributes."""
         plz_value = postal_code.value if isinstance(postal_code, PostalCode) else str(postal_code)

@@ -2,7 +2,6 @@
 Shared Infrastructure Abstract Charging Station Repository Module.
 """
 
-from typing import List
 from abc import ABC, abstractmethod
 
 from src.shared.domain.entities import ChargingStation
@@ -16,7 +15,7 @@ class ChargingStationRepository(ABC):
     """
 
     @abstractmethod
-    def find_stations_by_postal_code(self, postal_code: PostalCode) -> List[ChargingStation]:
+    def find_stations_by_postal_code(self, postal_code: PostalCode) -> list[ChargingStation]:
         """
         Find charging stations by postal code.
 

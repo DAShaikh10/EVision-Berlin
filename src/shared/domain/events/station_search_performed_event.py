@@ -2,7 +2,6 @@
 Shared Domain Event - Station Search Performed Event
 """
 
-from typing import Dict
 from dataclasses import dataclass, field
 
 from src.shared.domain.value_objects import PostalCode
@@ -27,4 +26,4 @@ class StationSearchPerformedEvent(DomainEvent):
 
     postal_code: PostalCode
     stations_found: int
-    search_parameters: Dict[str, PostalCode] = field(default_factory=dict)
+    search_parameters: dict[str, PostalCode] = field(default_factory=dict)

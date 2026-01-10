@@ -4,7 +4,7 @@ Shared Domain GeoLocation Value Object.
 
 import logging
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from src.shared.domain.exceptions import InvalidGeoLocationError
 from src.shared.domain.value_objects.boundary import Boundary
@@ -24,7 +24,7 @@ class GeoLocation:
     """
 
     postal_code: "PostalCode"
-    boundary: Optional[Boundary] = field(default=None, repr=False)
+    boundary: Boundary | None = field(default=None, repr=False)
 
     def __post_init__(self):
         """Validate the boundary abstraction on creation."""

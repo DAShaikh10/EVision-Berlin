@@ -5,8 +5,6 @@ This service coordinates demand calculations across multiple aggregates,
 implementing business logic that doesn't naturally belong to a single aggregate.
 """
 
-from typing import Dict, List
-
 from src.demand.domain.enums import PriorityLevel
 from src.demand.domain.aggregates import DemandAnalysisAggregate
 
@@ -26,7 +24,7 @@ class RegionalDemandAnalysis:
         medium_priority_count: int,
         low_priority_count: int,
         average_residents_per_station: float,
-        critical_areas: List[str],
+        critical_areas: list[str],
     ):
         """
         Initialize regional demand analysis.
@@ -48,7 +46,7 @@ class RegionalDemandAnalysis:
         self.average_residents_per_station = average_residents_per_station
         self.critical_areas = critical_areas
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary representation."""
         return {
             "total_population": self.total_population,
@@ -71,7 +69,7 @@ class DemandCalculationService:
 
     @staticmethod
     def calculate_regional_demand(
-        aggregates: List[DemandAnalysisAggregate],
+        aggregates: list[DemandAnalysisAggregate],
     ) -> RegionalDemandAnalysis:
         """
         Calculate regional demand metrics across multiple postal code areas.
@@ -121,7 +119,7 @@ class DemandCalculationService:
         )
 
     @staticmethod
-    def compare_areas(aggregate1: DemandAnalysisAggregate, aggregate2: DemandAnalysisAggregate) -> Dict[str, any]:
+    def compare_areas(aggregate1: DemandAnalysisAggregate, aggregate2: DemandAnalysisAggregate) -> dict[str, any]:
         """
         Compare demand between two postal code areas.
 
@@ -162,8 +160,8 @@ class DemandCalculationService:
 
     @staticmethod
     def identify_priority_clusters(
-        aggregates: List[DemandAnalysisAggregate],
-    ) -> Dict[str, List[str]]:
+        aggregates: list[DemandAnalysisAggregate],
+    ) -> dict[str, list[str]]:
         """
         Group postal code areas by priority level.
 

@@ -7,6 +7,6 @@ We allow implicit imports only from the infrastructure layer, for the other laye
 from .logging_config import setup_logging, get_logger
 
 __all__ = [
-    "setup_logging",
     "get_logger",
+    "setup_logging",
 ]

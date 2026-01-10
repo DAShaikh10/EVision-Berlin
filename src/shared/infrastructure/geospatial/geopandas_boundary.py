@@ -3,7 +3,6 @@ Geopandas-backed implementation of the domain Boundary abstraction.
 """
 
 from dataclasses import dataclass
-from typing import Optional
 
 import geopandas as gpd
 
@@ -26,7 +25,7 @@ class GeopandasBoundary(Boundary):
         return self.gdf.empty
 
     @classmethod
-    def from_wkt(cls, boundary_wkt: Optional[str]) -> "GeopandasBoundary":
+    def from_wkt(cls, boundary_wkt: str | None) -> "GeopandasBoundary":
         """Create a boundary from a WKT string."""
         if boundary_wkt is None:
             raise ValueError("Boundary WKT cannot be None.")

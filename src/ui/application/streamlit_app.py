@@ -880,7 +880,6 @@ class StreamlitApp:
                 analysis = self.demand_analysis_service.get_demand_analysis(selected_postal_code)
 
                 if analysis:
-
                     # Display metrics in columns
                     col1, col2, col3, col4 = streamlit.columns(4)
 

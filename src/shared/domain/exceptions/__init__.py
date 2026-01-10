@@ -6,6 +6,6 @@ from .invalid_postal_code_exception import InvalidPostalCodeError
 from .invalid_geo_location_exception import InvalidGeoLocationError
 
 __all__ = [
-    "InvalidPostalCodeError",
     "InvalidGeoLocationError",
+    "InvalidPostalCodeError",
 ]

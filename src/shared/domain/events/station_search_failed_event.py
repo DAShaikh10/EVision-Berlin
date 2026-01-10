@@ -2,7 +2,6 @@
 Shared Domain Event - Station Search Failed Event
 """
 
-from typing import Optional
 from dataclasses import dataclass
 
 from src.shared.domain.value_objects import PostalCode
@@ -28,4 +27,4 @@ class StationSearchFailedEvent(DomainEvent):
 
     postal_code: PostalCode
     error_message: str
-    error_type: Optional[str] = None
+    error_type: str | None = None

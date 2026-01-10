@@ -2,8 +2,6 @@
 CSV-based implementation of PopulationRepository.
 """
 
-from typing import List
-
 from src.shared.domain.value_objects import PostalCode
 from src.shared.infrastructure.repositories import CSVRepository, PopulationRepository
 
@@ -37,14 +35,14 @@ class CSVPopulationRepository(PopulationRepository, CSVRepository):
         self._df["lat"] = self._df["lat"].astype(str).str.replace(",", ".")
         self._df["lon"] = self._df["lon"].astype(str).str.replace(",", ".")
 
-    def get_all_postal_codes(self) -> List[PostalCode]:
+    def get_all_postal_codes(self) -> list[PostalCode]:
         """
         Get all postal codes with population data.
 
         Returns:
             List of PostalCode value objects
         """
-        postal_codes: List[PostalCode] = []
+        postal_codes: list[PostalCode] = []
         for plz in self._df["plz"].unique():
             try:
                 postal_code = PostalCode(plz)

@@ -2,7 +2,6 @@
 Data Transfer Object for Power Capacity information.
 """
 
-from typing import Optional
 from dataclasses import dataclass
 
 
@@ -26,7 +25,7 @@ class PowerCapacityDTO:
     postal_code: str
     total_capacity_kw: float
     station_count: int
-    capacity_category: Optional[str] = None
+    capacity_category: str | None = None
 
     def to_dict(self) -> dict:
         """

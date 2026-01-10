@@ -3,7 +3,7 @@ Shared Domain - Domain Event Publisher Interface.
 """
 
 from abc import ABC, abstractmethod
-from typing import Callable, Type
+from collections.abc import Callable
 
 from .domain_event import DomainEvent
 
@@ -14,7 +14,7 @@ class IDomainEventPublisher(ABC):
     """
 
     @abstractmethod
-    def subscribe(self, event_type: Type[DomainEvent], handler: Callable[[DomainEvent], None]) -> None:
+    def subscribe(self, event_type: type[DomainEvent], handler: Callable[[DomainEvent], None]) -> None:
         """
         Subscribe a handler to an event type.
 

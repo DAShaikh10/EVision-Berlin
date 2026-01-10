@@ -147,7 +147,7 @@ class TestHighDemandAreaIdentifiedEventType:
             urgency_score=100.0,
         )
 
-        assert type(event1) == type(event2)
+        assert type(event1) is type(event2)
         assert type(event1).__name__ == "HighDemandAreaIdentifiedEvent"
 
 

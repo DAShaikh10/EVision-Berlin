@@ -2,8 +2,6 @@
 Demand Application Service for Demand Analysis.
 """
 
-from typing import Dict, List, Optional
-
 from src.shared.infrastructure import get_logger
 
 from src.shared.domain.events import IDomainEventPublisher
@@ -76,7 +74,7 @@ class DemandAnalysisService(BaseService):
 
         return DemandAnalysisDTO.from_aggregate(aggregate)
 
-    def analyze_multiple_areas(self, areas: List[Dict[str, any]]) -> List[DemandAnalysisDTO]:
+    def analyze_multiple_areas(self, areas: list[dict[str, any]]) -> list[DemandAnalysisDTO]:
         """
         Use case: Analyze demand for multiple postal code areas.
 
@@ -103,7 +101,7 @@ class DemandAnalysisService(BaseService):
 
         return results
 
-    def get_high_priority_areas(self) -> List[DemandAnalysisDTO]:
+    def get_high_priority_areas(self) -> list[DemandAnalysisDTO]:
         """
         Use case: Get all high-priority areas requiring attention.
 
@@ -119,7 +117,7 @@ class DemandAnalysisService(BaseService):
 
         return [DemandAnalysisDTO.from_aggregate(agg) for agg in high_priority]
 
-    def get_demand_analysis(self, postal_code: str) -> Optional[DemandAnalysisDTO]:
+    def get_demand_analysis(self, postal_code: str) -> DemandAnalysisDTO | None:
         """
         Use case: Retrieve demand analysis for a specific postal code.
 
@@ -139,7 +137,7 @@ class DemandAnalysisService(BaseService):
         return DemandAnalysisDTO.from_aggregate(aggregate)
 
     def update_demand_analysis(
-        self, postal_code: str, population: int = None, station_count: int = None
+        self, postal_code: str, population: int | None = None, station_count: int | None = None
     ) -> DemandAnalysisDTO:
         """
         Use case: Update existing demand analysis with new data.
@@ -176,7 +174,7 @@ class DemandAnalysisService(BaseService):
 
         return DemandAnalysisDTO.from_aggregate(aggregate)
 
-    def get_recommendations(self, postal_code: str, target_ratio: float = 2000.0) -> Dict:
+    def get_recommendations(self, postal_code: str, target_ratio: float = 2000.0) -> dict:
         """
         Use case: Get infrastructure recommendations for an area.
 

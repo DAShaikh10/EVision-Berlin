@@ -2,8 +2,6 @@
 Discovery Domain Aggregate - Postal Code Area Aggregate Module.
 """
 
-from typing import List
-
 from src.shared.domain.entities import ChargingStation
 from src.shared.domain.aggregates import BaseAggregate
 from src.shared.domain.value_objects import PostalCode
@@ -34,7 +32,7 @@ class PostalCodeAreaAggregate(BaseAggregate):
     - Station list must be non-null
     """
 
-    def __init__(self, postal_code: PostalCode, stations: List[ChargingStation] = None):
+    def __init__(self, postal_code: PostalCode, stations: list[ChargingStation] | None = None):
         """
         Initialize the PostalCodeAreaAggregate.
 
@@ -73,7 +71,7 @@ class PostalCodeAreaAggregate(BaseAggregate):
         return PostalCodeAreaAggregate(postal_code=postal_code, stations=[])
 
     @staticmethod
-    def create_with_stations(postal_code: PostalCode, stations: List[ChargingStation]) -> "PostalCodeAreaAggregate":
+    def create_with_stations(postal_code: PostalCode, stations: list[ChargingStation]) -> "PostalCodeAreaAggregate":
         """
         Factory Method: Create aggregate with initial stations.
 
@@ -98,7 +96,7 @@ class PostalCodeAreaAggregate(BaseAggregate):
         """
         return self._postal_code
 
-    def get_stations(self) -> List[ChargingStation]:
+    def get_stations(self) -> list[ChargingStation]:
         """
         Query: Get all charging stations in this area.
 
@@ -236,7 +234,7 @@ class PostalCodeAreaAggregate(BaseAggregate):
             categories[category].append(station)
         return categories
 
-    def perform_search(self, search_parameters: dict = None):
+    def perform_search(self, search_parameters: dict | None = None):
         """
         Business operation: Perform a search and emit domain event.
 
@@ -254,7 +252,7 @@ class PostalCodeAreaAggregate(BaseAggregate):
         )
         self._add_domain_event(event)
 
-    def fail_search(self, error_message: str, error_type: str = None):
+    def fail_search(self, error_message: str, error_type: str | None = None):
         """
         Business operation: Record a failed search and emit domain event.
 

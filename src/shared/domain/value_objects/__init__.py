@@ -9,9 +9,9 @@ from .population_data import PopulationData
 from .power_capacity import PowerCapacity
 
 __all__ = [
-    "PostalCode",
     "Boundary",
     "GeoLocation",
     "PopulationData",
+    "PostalCode",
     "PowerCapacity",
 ]

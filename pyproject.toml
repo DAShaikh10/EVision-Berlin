@@ -59,6 +59,7 @@ ignore = [
     "ARG005",  # Allow unused lambda arguments (needed for folium style_function signature)
     "RUF001",  # Allow unicode characters (emojis in UI)
     "I001",    # Allow unsorted imports (user preference)
+    "UP038",   # Allow (X, Y) in isinstance (more readable than X | Y)
 ]
 
 [tool.ruff.lint.per-file-ignores]

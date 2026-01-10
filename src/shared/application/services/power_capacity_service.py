@@ -2,8 +2,6 @@
 Shared Application Service for Power Capacity Analysis.
 """
 
-from typing import Dict, List, Tuple
-
 from src.shared.application.dtos import PowerCapacityDTO
 from src.shared.domain.services import CapacityClassificationService
 from src.shared.domain.value_objects import PostalCode
@@ -24,7 +22,7 @@ class PowerCapacityService:
         """
         self._repository = charging_station_repository
 
-    def get_power_capacity_by_postal_code(self, postal_codes: List[PostalCode]) -> List[PowerCapacityDTO]:
+    def get_power_capacity_by_postal_code(self, postal_codes: list[PostalCode]) -> list[PowerCapacityDTO]:
         """
         Calculate total power capacity (in kW) for each postal code.
 
@@ -60,8 +58,8 @@ class PowerCapacityService:
         return capacity_data
 
     def classify_capacity_ranges(
-        self, capacity_dtos: List[PowerCapacityDTO]
-    ) -> Tuple[Dict[str, Tuple[float, float]], List[PowerCapacityDTO]]:
+        self, capacity_dtos: list[PowerCapacityDTO]
+    ) -> tuple[dict[str, tuple[float, float]], list[PowerCapacityDTO]]:
         """
         Classify postal codes into Low, Medium, and High capacity ranges using quantiles.
 
@@ -94,7 +92,7 @@ class PowerCapacityService:
                 station_count=dto.station_count,
                 capacity_category=category.value if hasattr(category, "value") else category,
             )
-            for dto, category in zip(capacity_dtos, categories)
+            for dto, category in zip(capacity_dtos, categories, strict=False)
         ]
 
         return range_definitions, capacity_dtos_with_category
@@ -128,8 +126,8 @@ class PowerCapacityService:
         return f"#{r:02x}{g:02x}{b:02x}"
 
     def filter_by_capacity_category(
-        self, capacity_dtos: List[PowerCapacityDTO], category: str
-    ) -> List[PowerCapacityDTO]:
+        self, capacity_dtos: list[PowerCapacityDTO], category: str
+    ) -> list[PowerCapacityDTO]:
         """
         Filter postal codes by capacity category.
 
