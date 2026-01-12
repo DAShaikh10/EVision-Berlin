@@ -101,14 +101,37 @@ class StationDiscoveryView:
         logger.info("Found %d charging stations", len(stations))
 
         for station in stations:
-            folium.CircleMarker(
+            # Create custom icon with electric charging symbol
+            icon_html = """
+            <div style="
+                background-color: #1bbc9b;
+                border: 3px solid #148f77;
+                border-radius: 50%;
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 18px;
+                color: white;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            ">⚡</div>
+            """
+
+            popup_content = f"""
+            <div style="font-family: Arial; min-width: 150px;">
+                <b>⚡ Charging Station</b><br>
+                <hr style="margin: 5px 0;">
+                📍 <b>PLZ:</b> {station.postal_code.value}<br>
+                🔋 <b>Power:</b> {station.power_capacity.kilowatts} kW
+            </div>
+            """
+
+            folium.Marker(
                 location=[station.latitude, station.longitude],
-                radius=6,
-                popup=f"PLZ: {station.postal_code.value}<br>Power: {station.power_capacity.kilowatts} kW",
-                color="darkgreen",
-                fill=True,
-                fillColor="green",
-                fillOpacity=0.8,
+                popup=folium.Popup(popup_content, max_width=250),
+                tooltip=f"⚡ {station.power_capacity.kilowatts} kW",
+                icon=folium.DivIcon(html=icon_html),
             ).add_to(folium_map)
 
     def _render_all_areas_by_station_count(self, folium_map: folium.Map):  # pylint: disable=too-many-locals
