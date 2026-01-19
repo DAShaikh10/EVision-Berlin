@@ -64,11 +64,9 @@ URL: **[evision-berlin.streamlit.app](https://evision-berlin.streamlit.app/)**
 - 🗺️ **Interactive Map Visualization:** Dynamic Folium maps displaying Berlin charging stations with geographic precision
 - 📊 **Population Density Heatmap:** Visual representation of resident distribution by postal code
 - ⚡ **Power Category Filtering:** Analyze charging stations by power output:
-  - Slow (< 11 kW)
-  - Normal (11-22 kW)
-  - Fast (22-50 kW)
-  - Rapid (50-150 kW)
-  - Ultra-rapid (> 150 kW)
+  - Normal (< 50 kW) - AC charging, home wallboxes
+  - Fast (50-150 kW) - DC fast charging
+  - Ultra (≥ 150 kW) - Ultra-fast DC charging
 - 🔍 **ZIP Code Search:** Instant lookup of specific postal code areas
 - 📈 **Real-time Statistics Dashboard:** Key metrics and demand indicators
 - 🔄 **Dual-layer Visualization:** Simultaneous comparison of population vs. charging infrastructure
@@ -85,6 +83,7 @@ EVision Berlin is built using **Domain-Driven Design** principles with **Test-Dr
 #### 🎯 Bounded Contexts
 
 **1. Station Discovery Context**
+
 - **Aggregate Root**: `PostalCodeAreaAggregate` - manages charging station collections by area
 - **Entities**: `ChargingStation` - individual charging infrastructure
 - **Value Objects**: `PostalCode`, `GeoLocation` - immutable domain concepts
@@ -92,17 +91,21 @@ EVision Berlin is built using **Domain-Driven Design** principles with **Test-Dr
 - **Repositories**: `CSVChargingStationRepository`, `CSVGeoDataRepository` - data persistence
 
 **2. Demand Analysis Context**
+
 - **Aggregate Root**: `DemandAnalysisAggregate` - encapsulates demand calculations and priority
 - **Value Objects**: `DemandPriority` - priority level categorization
-- **Services**: `DemandAnalysisService`, `PopulationAnalysisService` - business logic
+- **Services**: `DemandAnalysisService` - business logic for demand analysis
 - **Domain Events**: `DemandAnalysisCalculatedEvent`, `HighDemandAreaIdentifiedEvent`
 - **Repositories**: `InMemoryDemandAnalysisRepository` - demand data storage
 
 **3. Shared Kernel**
-- **Value Objects**: `PostalCode`, `GeoLocation`, `Population` - shared across contexts
-- **Domain Events**: `DomainEventBus`, `StationSearchPerformedEvent` - event-driven architecture
-- **Services**: `PostalCodeResidentService`, `PowerCapacityService` - shared services
-- **Constants**: `InfrastructureThresholds`, `PowerThresholds` - business rules (no magic numbers)
+
+- **Entities**: `ChargingStation` - charging infrastructure entity
+- **Value Objects**: `PostalCode`, `GeoLocation`, `PowerCapacity` - shared across contexts
+- **Domain Events**: `DomainEvent`, `StationSearchPerformedEvent` - event-driven architecture
+- **Services**: `PostalCodeResidentService`, `PowerCapacityService`, `GeoLocationService` - shared services
+- **Constants**: `InfrastructureThresholds`, `PopulationThresholds`, `PostalCodeThresholds`, `PowerThresholds` - business rules (no magic numbers)
+- **Enums**: `ChargingCategory`, `CoverageLevel`, `PopulationDensityCategory`, `CapacityCategory` - type-safe categorizations
 
 #### 🏗️ Architecture Layers
 
@@ -136,9 +139,9 @@ EVision-Berlin/
 │   │   │   ├── aggregates/          # DemandAnalysisAggregate
 │   │   │   ├── value_objects/       # DemandPriority, StationCount, Population
 │   │   │   ├── events/              # Domain events
-│   │   │   └── constants/           # Business thresholds
+│   │   │   └── enums.py             # Demand-specific enumerations
 │   │   ├── application/             # Application services, DTOs
-│   │   │   ├── services/            # DemandAnalysisService, PopulationAnalysisService
+│   │   │   ├── services/            # DemandAnalysisService
 │   │   │   ├── dtos/                # Data Transfer Objects
 │   │   │   └── event_handlers/      # Event handlers
 │   │   └── infrastructure/          # Repositories, event handlers
@@ -153,11 +156,19 @@ EVision-Berlin/
 │   │   └── infrastructure/          # Data access implementations
 │   ├── shared/                      # Shared kernel
 │   │   ├── domain/                  # Shared value objects, events
-│   │   │   ├── value_objects/       # PostalCode, GeoLocation, Population
+│   │   │   ├── aggregates/          # Shared aggregates
+│   │   │   ├── entities/            # ChargingStation entity
+│   │   │   ├── value_objects/       # PostalCode, GeoLocation, PowerCapacity
 │   │   │   ├── events/              # DomainEvent, StationSearchPerformedEvent
-│   │   │   └── constants/           # Shared business constants
+│   │   │   ├── constants.py         # InfrastructureThresholds, PopulationThresholds, PostalCodeThresholds, PowerThresholds
+│   │   │   ├── enums.py             # ChargingCategory, CoverageLevel, PopulationDensityCategory
+│   │   │   ├── exceptions/          # Domain exceptions
+│   │   │   └── services/            # Domain services
 │   │   ├── application/             # Shared services
-│   │   │   └── services/            # PostalCodeResidentService, PowerCapacityService
+│   │   │   └── services/            # PostalCodeResidentService, PowerCapacityService, GeoLocationService
+│   │   ├── views/                   # Shared UI components
+│   │   │   ├── about_view.py        # About section view
+│   │   │   └── components.py        # Reusable UI components
 │   │   └── infrastructure/          # Event bus, logging, repositories
 │   │       ├── event_bus.py         # InMemoryEventBus
 │   │       ├── logging_config.py    # Centralized logging
@@ -167,16 +178,13 @@ EVision-Berlin/
 │   │           ├── plz_einwohner.csv        # Population data by postal code
 │   │           └── geodata_berlin_plz.csv   # Postal code boundary geometries (WKT)
 │   └── ui/                          # Presentation layer
-│       └── application.py           # Streamlit UI components
+│       └── application/             # Streamlit application
+│           └── streamlit_app.py     # Main Streamlit app class
 ├── tests/                           # Test suite (TDD)
-│   ├── unit/                        # Unit tests for domain & application
-│   │   ├── demand/                  # Demand context tests
-│   │   ├── discovery/               # Discovery context tests
-│   │   └── shared/                  # Shared kernel tests
-│   ├── integration/                 # Integration tests
-│   │   ├── repositories/            # Repository integration tests
-│   │   └── services/                # Service integration tests
-│   └── fixtures/                    # Test fixtures and mocks
+│   ├── conftest.py                  # Pytest configuration and shared fixtures
+│   ├── demand/                      # Demand context tests
+│   ├── discovery/                   # Discovery context tests
+│   └── shared/                      # Shared kernel tests
 ├── docs/                            # Documentation
 │   ├── about.py                     # About section for UI
 │   └── DATA_QUALITY_ANALYSIS.md     # Data quality report
@@ -305,21 +313,21 @@ task install
 
 **Key Packages Installed:**
 
-| Package            | Version | Purpose                          |
-| ------------------ | ------- | -------------------------------- |
-| `pandas`           | Latest  | Data manipulation and analysis   |
-| `geopandas`        | Latest  | Geospatial data processing       |
-| `streamlit`        | 1.51+   | Web application framework        |
-| `folium`           | Latest  | Interactive maps                 |
-| `streamlit-folium` | Latest  | Streamlit-Folium integration     |
-| `matplotlib`       | Latest  | Statistical visualizations       |
-| `seaborn`          | Latest  | Advanced statistical plots       |
-| `scipy`            | Latest  | Statistical analysis             |
-| `pytest`           | Latest  | Testing framework                |
-| `pytest-cov`       | Latest  | Code coverage                    |
-| `pylint`           | Latest  | Code quality linting             |
-| `black`            | Latest  | Code formatter                   |
-| `taskipy`          | Latest  | Task runner                      |
+| Package            | Version | Purpose                        |
+| ------------------ | ------- | ------------------------------ |
+| `pandas`           | Latest  | Data manipulation and analysis |
+| `geopandas`        | Latest  | Geospatial data processing     |
+| `streamlit`        | 1.51+   | Web application framework      |
+| `folium`           | Latest  | Interactive maps               |
+| `streamlit-folium` | Latest  | Streamlit-Folium integration   |
+| `matplotlib`       | Latest  | Statistical visualizations     |
+| `seaborn`          | Latest  | Advanced statistical plots     |
+| `scipy`            | Latest  | Statistical analysis           |
+| `pytest`           | Latest  | Testing framework              |
+| `pytest-cov`       | Latest  | Code coverage                  |
+| `pylint`           | Latest  | Code quality linting           |
+| `black`            | Latest  | Code formatter                 |
+| `taskipy`          | Latest  | Task runner                    |
 
 ### Step 4: Verify Data Files
 
@@ -358,6 +366,7 @@ task test-cov       # Run tests with coverage report (HTML + terminal)
 ```
 
 **Test Coverage Output:**
+
 - HTML report generated in `htmlcov/` directory
 - Terminal shows missing lines for quick identification
 - Open `htmlcov/index.html` in browser for detailed visualization
@@ -405,7 +414,6 @@ task pull-task      # Stash changes, pull from task branch, restore changes
    ```
 
 3. **Access the Application:**
-
    - The app will automatically open in your default browser
    - Default URL: `http://localhost:8501`
    - If the browser doesn't open, manually navigate to the URL shown in the terminal
@@ -436,11 +444,10 @@ For public deployment:
 
 #### 1. Sidebar Controls
 
-**Power Category Filter:**
+**Visualization Mode:**
 
-- Select one or multiple power categories
-- Options: Slow, Normal, Fast, Rapid, Ultra-rapid
-- Filters apply to the charging station map layer
+- **Basic View**: Toggle between Residents layer and All Charging Stations layer
+- **Power Capacity (KW) View**: Shows power capacity distribution with capacity range filters (All, Low, Medium, High)
 
 **Postal Code Search:**
 
@@ -499,14 +506,12 @@ Below the map:
 **Key Observations:**
 
 1. **Central Districts (Mitte, Prenzlauer Berg, Friedrichshain)**
-
    - Darkest colors indicate highest density
    - Compact urban living with high apartment concentration
    - Young, urban demographic
    - **Expected Behavior:** High demand for public charging infrastructure
 
 2. **Outer Districts (Pankow, Spandau, Köpenick, Marzahn-Hellersdorf)**
-
    - Lighter colors indicate lower density
    - More single-family homes with private parking
    - Higher likelihood of home charging installations
@@ -535,14 +540,12 @@ Below the map:
 **Key Observations:**
 
 1. **Business Districts & Tourist Areas**
-
    - Well-served despite lower resident populations
    - Examples: Potsdamer Platz, Kurfürstendamm, Alexanderplatz
    - Stations serve commuters, tourists, and commercial vehicles
    - **Insight:** Infrastructure follows economic activity, not just population
 
 2. **Residential High-Density Areas**
-
    - Uneven distribution observed
    - Some high-population postal codes have minimal infrastructure
    - Historical building constraints limit installations
@@ -575,8 +578,6 @@ When you run `python main.py`, the system automatically:
 3. **Generates Visualizations** - Creates 3 PNG files with 16 plots total
 4. **Produces Statistical Reports** - Prints detailed summaries to console
 
-_Note:_ A more condensed version of the automated analysis is available at [`check_data.py`](check_data.py)
-
 ### Generated Visualizations
 
 Three comprehensive visualization files are automatically created:
@@ -587,7 +588,7 @@ Contains 6 plots analyzing charging station data:
 
 - **Power Capacity Distribution**: Histogram showing frequency of different power ratings
 - **Outlier Detection**: Box plot identifying stations with unusual power capacities
-- **Power Categories**: Bar chart showing distribution across Slow/Normal/Fast/Rapid/Ultra categories
+- **Power Categories**: Bar chart showing distribution across Normal/Fast/Ultra categories
 - **Stations per PLZ**: Distribution of infrastructure density
 - **Missing Data**: Percentage of incomplete records
 - **Top 10 PLZ**: Areas with highest station counts
@@ -618,7 +619,7 @@ Contains 4 plots analyzing infrastructure-population relationships:
 
 - Total: 3,664 stations in Berlin
 - Power Range: 6-600 kW
-- Outliers: 461 ultra-rapid chargers (>77 kW)
+- Outliers: 461 fast and ultra chargers (>77 kW)
 - Missing Data: 22% of records lack power rating
 
 **Population:**
@@ -672,17 +673,14 @@ For complete analysis results, see [`DATA_QUALITY_ANALYSIS.md`](docs/DATA_QUALIT
 **Recommended Actions:**
 
 1. **Install Fast Chargers (50+ kW)**
-
    - Quick turnaround for multiple users
    - Suitable for residents without home charging
 
 2. **Target Multi-Unit Residential Buildings**
-
    - Partner with building management
    - Install shared charging infrastructure in parking areas
 
 3. **Deploy Street-Side Charging**
-
    - Lamppost chargers (on-street parking)
    - Sidewalk-accessible stations
    - Curbside installations
@@ -717,13 +715,11 @@ For complete analysis results, see [`DATA_QUALITY_ANALYSIS.md`](docs/DATA_QUALIT
 **Recommended Actions:**
 
 1. **Add Standard Level 2 Chargers (11-22 kW)**
-
    - Overnight/long-duration charging
    - Cost-effective installation
    - Sufficient for daily charging needs
 
 2. **Expand Existing Station Locations**
-
    - Add more charge points to existing sites
    - Leverage existing electrical infrastructure
    - Reduce installation costs
@@ -758,13 +754,11 @@ For complete analysis results, see [`DATA_QUALITY_ANALYSIS.md`](docs/DATA_QUALIT
 **Recommended Actions:**
 
 1. **Monitor Usage Patterns**
-
    - Track utilization rates of existing stations
    - Identify peak usage times
    - Adjust as needed based on data
 
 2. **Track EV Adoption Rates**
-
    - Watch for increases in EV registrations
    - Survey residents about future EV purchase plans
    - Anticipate future demand
@@ -813,47 +807,45 @@ EVision Berlin follows **Test-Driven Development** principles:
 
 ```
 tests/
-├── unit/                           # Unit tests (isolated components)
-│   ├── demand/                     # Demand context tests
-│   │   ├── test_aggregates.py      # DemandAnalysisAggregate tests
-│   │   ├── test_services.py        # Service layer tests
-│   │   └── test_value_objects.py   # Value object validation tests
-│   ├── discovery/                  # Discovery context tests
-│   │   ├── test_aggregates.py      # PostalCodeAreaAggregate tests
-│   │   ├── test_entities.py        # ChargingStation entity tests
-│   │   └── test_value_objects.py   # PostalCode, GeoLocation tests
-│   └── shared/                     # Shared kernel tests
-│       ├── test_events.py          # Domain event tests
-│       └── test_services.py        # Shared service tests
-├── integration/                    # Integration tests (component interaction)
-│   ├── test_repositories.py        # CSV repository tests
-│   ├── test_event_bus.py           # Event bus integration
-│   └── test_services.py            # Cross-context service tests
-└── fixtures/                       # Test data and mocks
-    ├── sample_data.py              # Sample datasets
-    └── mocks.py                    # Mock objects
+├── conftest.py                     # Pytest configuration and shared fixtures
+├── demand/                         # Demand context tests
+│   ├── test_aggregates.py          # DemandAnalysisAggregate tests
+│   ├── test_services.py            # Service layer tests
+│   └── test_value_objects.py       # Value object validation tests
+├── discovery/                      # Discovery context tests
+│   ├── test_aggregates.py          # PostalCodeAreaAggregate tests
+│   ├── test_entities.py            # ChargingStation entity tests
+│   └── test_value_objects.py       # PostalCode, GeoLocation tests
+└── shared/                         # Shared kernel tests
+    ├── test_events.py              # Domain event tests
+    ├── test_services.py            # Shared service tests
+    └── test_repositories.py        # Repository tests
 ```
 
 ### Running Tests
 
 **Run all tests:**
+
 ```bash
 task test
 # Or: pytest tests/ -v
 ```
 
 **Run with coverage:**
+
 ```bash
 task test-cov
 # Or: pytest tests/ -v --cov=src --cov-report=html --cov-report=term-missing
 ```
 
 **Run specific test file:**
+
 ```bash
 pytest tests/unit/demand/test_aggregates.py -v
 ```
 
 **Run specific test function:**
+
 ```bash
 pytest tests/unit/demand/test_aggregates.py::test_demand_analysis_aggregate_creation -v
 ```
@@ -875,11 +867,13 @@ pytest tests/unit/demand/test_aggregates.py::test_demand_analysis_aggregate_crea
 ### Quality Assurance
 
 **Automated Checks (GitHub Actions):**
+
 - ✅ **pylint**: Code quality and style enforcement
 - ✅ **pytest**: All tests must pass
 - ✅ **coverage**: Minimum coverage thresholds
 
 **Pre-commit Hooks:**
+
 - Code formatting with `black`
 - Linting with `pylint`
 - Test execution before commit
@@ -887,18 +881,21 @@ pytest tests/unit/demand/test_aggregates.py::test_demand_analysis_aggregate_crea
 ### Test Categories
 
 **1. Unit Tests:**
+
 - Value object validation (PostalCode, GeoLocation)
 - Aggregate business logic (DemandAnalysisAggregate)
 - Service methods (isolated with mocks)
 - Domain event creation and publishing
 
 **2. Integration Tests:**
+
 - Repository data access (CSV reading/writing)
 - Event bus message passing
 - Cross-context service interactions
 - End-to-end use case flows
 
 **3. Domain Validation Tests:**
+
 - PostalCode format validation (Berlin-specific rules)
 - GeoLocation coordinate validation
 - Business rule enforcement (thresholds, priorities)
@@ -907,6 +904,7 @@ pytest tests/unit/demand/test_aggregates.py::test_demand_analysis_aggregate_crea
 ### Example Test Patterns
 
 **Value Object Validation:**
+
 ```python
 def test_postal_code_invalid_format():
     with pytest.raises(InvalidPostalCodeError):
@@ -914,6 +912,7 @@ def test_postal_code_invalid_format():
 ```
 
 **Aggregate Behavior:**
+
 ```python
 def test_demand_analysis_calculates_priority():
     aggregate = DemandAnalysisAggregate(
@@ -925,6 +924,7 @@ def test_demand_analysis_calculates_priority():
 ```
 
 **Service Integration:**
+
 ```python
 def test_demand_analysis_service_integration():
     service = DemandAnalysisService(repo, event_bus)
@@ -1067,7 +1067,7 @@ def test_demand_analysis_service_integration():
 
 **Missing Insights:**
 
-- One ultra-rapid charger (150+ kW) serves more users per day than multiple slow chargers
+- One ultra charger (150+ kW) serves more users per day than multiple normal chargers
 - Charging speed affects turnover and capacity
 - Mismatch between supply and user needs
 
@@ -1075,7 +1075,7 @@ def test_demand_analysis_service_integration():
 
 - Weight stations by throughput capacity
 - Calculate "effective" station count based on power output
-- Recommend optimal mix of slow/fast/rapid chargers per area
+- Recommend optimal mix of normal/fast/ultra chargers per area
 
 ### 6. Accessibility and Availability
 
@@ -1123,13 +1123,11 @@ def test_demand_analysis_service_integration():
 ### Planned Features
 
 1. **Separate Layers for Each Power Category**
-
-   - Individual map layers for Slow, Normal, Fast, Rapid, Ultra-rapid
+   - Individual map layers for Normal, Fast, and Ultra charging categories
    - Toggle each category independently
    - Analyze power availability distribution
 
 2. **Data Quality Validation**
-
    - Automated checks for data integrity
    - Column format validation
    - Value range verification
@@ -1137,13 +1135,11 @@ def test_demand_analysis_service_integration():
    - Missing data reporting
 
 3. **Predictive Modeling**
-
    - Forecast future demand based on trends
    - EV adoption rate projections
    - Population growth modeling
 
 4. **Real-Time Data Integration**
-
    - Live charging station availability
    - Real-time occupancy rates
    - Wait time estimates
