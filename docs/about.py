@@ -12,8 +12,6 @@ ABOUT_SECTION = """
     charging station distribution, and power capacity across Berlin's postal codes to provide actionable insights
     for urban planners, policymakers, and EV infrastructure developers.
 
-    **Live Application**: [evision-berlin.streamlit.app](https://evision-berlin.streamlit.app/)
-
     ---
 
     ### 🎯 Purpose & Target Users
