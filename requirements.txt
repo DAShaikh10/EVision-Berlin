@@ -11,3 +11,4 @@ pylint # Linter.
 taskipy # Task Runner.
 pytest # Testing framework.
 pytest-cov # Code coverage for pytest.
+protobuf >= 6.33.5 # patched CVE-2026-0994
