@@ -2,7 +2,7 @@ name: Pytest
 
 on:
   push:
-    branches: [main, fix/pip-tools-version-incompatibility]
+    branches: [main]
   pull_request:
     branches: [main]
 
