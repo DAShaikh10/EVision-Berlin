@@ -91,10 +91,17 @@ jobs:
             .coverage
           retention-days: 30
 
+      - name: Pin setuptools for badge step
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "setuptools<81" > /tmp/pip-constraints.txt
+
       # Security: Generate coverage badge (read-only operation).
       - name: Coverage Badge
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: tj-actions/coverage-badge-py@v2
+        env:
+          PIP_CONSTRAINT: /tmp/pip-constraints.txt
         with:
           output: coverage.svg
 
