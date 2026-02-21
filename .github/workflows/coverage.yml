@@ -2,7 +2,7 @@ name: Code Coverage
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/pip-tools-version-incompatibility]
   pull_request:
     branches: [main]
 
@@ -37,8 +37,8 @@ jobs:
       # Security: Install dependencies with hash verification.
       - name: Install dependencies
         run: |
-          python -m pip install "pip==25.3"
-          pip install "setuptools<81" pip-tools
+          python -m pip install --upgrade pip
+          pip install pip-tools
           pip-compile --generate-hashes requirements.txt -o requirements-lock.txt
           pip install --require-hashes -r requirements-lock.txt
 
@@ -91,17 +91,10 @@ jobs:
             .coverage
           retention-days: 30
 
-      - name: Pin setuptools for badge step
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          echo "setuptools<81" > /tmp/pip-constraints.txt
-
       # Security: Generate coverage badge (read-only operation).
       - name: Coverage Badge
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: tj-actions/coverage-badge-py@v2
-        env:
-          PIP_CONSTRAINT: /tmp/pip-constraints.txt
         with:
           output: coverage.svg
 

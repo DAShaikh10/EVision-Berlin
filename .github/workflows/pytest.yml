@@ -2,7 +2,7 @@ name: Pytest
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/pip-tools-version-incompatibility]
   pull_request:
     branches: [main]
 
@@ -38,7 +38,7 @@ jobs:
       # Security: Install dependencies with hash verification.
       - name: Install dependencies
         run: |
-          python -m pip install "pip==25.3"
+          python -m pip install --upgrade pip
           pip install pip-tools
           pip-compile --generate-hashes requirements.txt -o requirements-lock.txt
           pip install --require-hashes -r requirements-lock.txt
