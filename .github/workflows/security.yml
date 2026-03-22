@@ -71,13 +71,19 @@ jobs:
           echo "## 📦 pip-audit - Dependency Analysis" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if pip-audit --desc --format json --output pip-audit-report.json; then
+          if [ -f requirements.txt ]; then
+            AUDIT_CMD="pip-audit -r requirements.txt"
+          else
+            AUDIT_CMD="pip-audit"
+          fi
+
+          if $AUDIT_CMD --desc --format json --output pip-audit-report.json; then
             echo "✅ All dependencies are secure" >> $GITHUB_STEP_SUMMARY
             echo "AUDIT_STATUS=passed" >> $GITHUB_ENV
           else
             echo "⚠️ Issues found:" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
-            pip-audit --desc 2>&1 | head -50 >> $GITHUB_STEP_SUMMARY || true
+            $AUDIT_CMD --desc 2>&1 | head -50 >> $GITHUB_STEP_SUMMARY || true
             echo '```' >> $GITHUB_STEP_SUMMARY
             echo "AUDIT_STATUS=failed" >> $GITHUB_ENV
           fi
@@ -132,7 +138,13 @@ jobs:
           echo "Checking for critical vulnerabilities..."
 
           # Fail on any known vulnerabilities in dependencies
-          if ! pip-audit --strict; then
+          if [ -f requirements.txt ]; then
+            AUDIT_STRICT_CMD="pip-audit -r requirements.txt --strict"
+          else
+            AUDIT_STRICT_CMD="pip-audit --strict"
+          fi
+
+          if ! $AUDIT_STRICT_CMD; then
             echo "❌ Critical vulnerabilities found by pip-audit" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
